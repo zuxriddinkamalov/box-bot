@@ -1,13 +1,40 @@
 from django.db import models
-from core.models import Language
+from core.models import Language, CartBase
 from django.utils import timezone
 
 
 # Create your models here.
 
 
+class PaySystem(models.Model):
+
+    title = models.CharField(
+        'Title',
+        max_length=10,
+        null=False,
+        blank=False
+        )
+
+    active = models.BooleanField(
+        'Active',
+        default=True,
+        null=False,
+        blank=False
+        )
+
+    order = models.IntegerField(
+        'PaySystem Number',
+        default=0,
+        blank=False,
+        null=False
+        )
+
+    def __str__(self):
+        return self.title
+
+
 class User(models.Model):
-    
+
     chat_id = models.IntegerField(
         'Chat id',
         default=0,
@@ -74,3 +101,11 @@ class User(models.Model):
 
     def __str__(self):
         return self.full_name()
+
+
+class Cart(CartBase):
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE
+        )

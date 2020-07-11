@@ -453,7 +453,7 @@ class Category(models.Model):
         blank=False,
         null=False
         )
-    
+
     def save(self, translate=True, *args, **kwargs):
 
         if translate:
@@ -540,7 +540,7 @@ class Product(models.Model):
         blank=False,
         null=False
         )
-    
+
     def save(self, translate=True, *args, **kwargs):
 
         if translate:
@@ -571,9 +571,9 @@ class Product(models.Model):
                             translated_cat.active = self.category.active
                             translated_cat.code = self.category.code
                             translated_cat.save(translate=False)
-                            
+
                             translated.category = translated_cat
-                        
+
                         translated.description = self.description
                         translated.price = self.price
                         translated.photo = self.photo
@@ -590,7 +590,7 @@ class Product(models.Model):
         else:
 
             super(Product, self).save(*args, **kwargs)
-    
+
     def __str__(self):
         return f'{self.language.title} - {self.title}'
 
@@ -615,7 +615,7 @@ class Position(models.Model):
         price = price_per_one * self.count
 
         return price
-    
+
     def __str__(self):
         return f'{self.language.title} - {self.title}'
 

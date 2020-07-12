@@ -1,6 +1,7 @@
 import os
 import sys
 import django
+from django.core.paginator import Paginator
 
 from aiogram.types import InputFile
 

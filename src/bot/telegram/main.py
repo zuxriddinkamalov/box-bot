@@ -26,8 +26,10 @@ import os
 import aioredis
 
 # init settings
-logging.basicConfig(format=u'%(filename)+13s [ LINE:%(lineno)-4s] %(levelname)-8s [%(asctime)s] %(message)s',
-                    level=logging.DEBUG)
+logging.basicConfig(
+    format=u'%(filename)+13s [ LINE:%(lineno)-4s] %(levelname)-8s [%(asctime)s] %(message)s',
+    level=logging.DEBUG
+    )
 
 Client = ClientModule.Client()
 
@@ -47,8 +49,10 @@ async def process_start_command(message: types.Message, state: FSMContext):
     user = int(message.from_user.id)
 
     if not Client.user_exists(user):
+
         modelUser = Client.user_create(message.from_user)
     else:
+
         modelUser = Client.get_user(user)
 
     await state.set_data({})
@@ -110,7 +114,31 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
     return
 
 
+@dp.message_handler(state=states.User.MainMenu)
+async def user_ammount_handler(message: types.Message, state: FSMContext):
+    user = int(message.from_user.id)
+    recieved_text = message.text
+    language = Client.get_user_language(user)
+
+    try:
+        button_code = Client.get_buttons(language, 1).get(
+            title=recieved_text
+            ).button_code
+    except Exception as e:
+        return
+
+    if button_code == 'catalog':
+        # "Catalog button handler"
+
+        text = Messages(user)['category']
+        await states.User.Category.set()
+
+        markup = keyboards.CategoryKeyboard(user, 1)
+        await bot.send_message(user, text, reply_markup=markup)
+
+
 async def shutdown(dispatcher: Dispatcher):
+
     await dispatcher.storage.close()
     await dispatcher.storage.wait_closed()
 

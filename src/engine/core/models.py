@@ -193,7 +193,7 @@ class Button(models.Model):
                         translated.title = self.title
                         translated.button_code = self.button_code
                         translated.order = self.order
-                        translated.active = self.order
+                        translated.active = self.active
                         translated.checkpoint = self.checkpoint
                         translated.language = language
 

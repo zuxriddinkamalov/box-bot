@@ -23,6 +23,19 @@ class Language(models.Model):
         blank=False
         )
 
+    text = models.CharField(
+        'Text',
+        max_length=255,
+        default=""
+        )
+
+    order = models.IntegerField(
+        'Language Number',
+        default=0,
+        blank=False,
+        null=False
+        )
+
     def __str__(self):
         return self.title
 

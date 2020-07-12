@@ -1,0 +1,25 @@
+version: '3.7'
+
+services:
+  web:
+    build: ./src
+    command: guricorn main:app --reload --workers 1 --host 0.0.0.0 --port 8000
+    volumes:
+      - ./src/:/usr/src/engine/
+    ports:
+      - 8020:8000
+    environment:
+      - DATABASE_URL=postgresql://telegram_django:telegram_django@db/telegram_django_dev
+  db:
+    image: postgres:latest
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    ports:
+      - "40020:5432"
+    environment:
+      - POSTGRES_USER=telegram_django
+      - POSTGRES_PASSWORD=telegram_django
+      - POSTGRES_DB=telegram_django
+
+volumes:
+  postgres_data:

@@ -93,7 +93,6 @@ class User(models.Model):
         blank=False
         )
 
-    @classmethod
     def full_name(self):
         return f'{self.first_name} {self.last_name}' \
             if self.last_name is not None \

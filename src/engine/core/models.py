@@ -4,6 +4,16 @@ from django.utils import timezone
 # Create your models here.
 
 
+class Config(models.Model):
+
+    days_left = models.IntegerField(
+        'Days Left',
+        default=0,
+        blank=False,
+        null=False
+        )
+
+
 class Language(models.Model):
 
     title = models.CharField(
@@ -290,11 +300,11 @@ class Announcement(models.Model):
 
                         translated = Announcement()
                         translated.language = language
-                        translated.visible = self.category.visible
-                        translated.active = self.category.active
-                        translated.photo = self.category.photo
-                        translated.title = self.category.title
-                        translated.text = self.category.text
+                        translated.visible = self.visible
+                        translated.active = self.active
+                        translated.photo = self.photo
+                        translated.title = self.title
+                        translated.text = self.text
 
                         translated.save(translate=False)
 
@@ -373,35 +383,35 @@ class Event(models.Model):
     def __str__(self):
         return f'{self.language.title} - {self.title}'
 
-        def save(self, translate=True, *args, **kwargs):
+    def save(self, translate=True, *args, **kwargs):
 
-            if translate:
+        if translate:
 
-                if self.pk is None:
+            if self.pk is None:
 
-                    for language in Language.objects.all():
+                for language in Language.objects.all():
 
-                        if Event.objects.filter(language__title=language.title, title=self.title).count() == 0:
+                    if Event.objects.filter(language__title=language.title, title=self.title).count() == 0:
 
-                            translated = Event()
-                            translated.language = language
-                            translated.visible = self.category.visible
-                            translated.active = self.category.active
-                            translated.photo = self.category.photo
-                            translated.title = self.category.title
-                            translated.text = self.category.text
+                        translated = Event()
+                        translated.language = language
+                        translated.visible = self.visible
+                        translated.active = self.active
+                        translated.photo = self.photo
+                        translated.title = self.title
+                        translated.text = self.text
 
-                            translated.save(translate=False)
-
-                else:
-
-                    self.updated_at = timezone.now()
-                    super(Event, self).save(*args, **kwargs)
+                        translated.save(translate=False)
 
             else:
 
                 self.updated_at = timezone.now()
                 super(Event, self).save(*args, **kwargs)
+
+        else:
+
+            self.updated_at = timezone.now()
+            super(Event, self).save(*args, **kwargs)
 
 
 class Category(models.Model):
@@ -437,7 +447,9 @@ class Category(models.Model):
 
     photo = models.ForeignKey(
         Photo,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
         )
 
     active = models.BooleanField(
@@ -466,12 +478,12 @@ class Category(models.Model):
 
                         translated = Category()
                         translated.language = language
-                        translated.order = self.category.order
-                        translated.photo = self.category.photo
-                        translated.title = self.category.title
-                        translated.description = self.category.description
-                        translated.active = self.category.active
-                        translated.code = self.category.code
+                        translated.order = self.order
+                        translated.photo = self.photo
+                        translated.title = self.title
+                        translated.description = self.description
+                        translated.active = self.active
+                        translated.code = self.code
 
                         translated.save(translate=False)
 

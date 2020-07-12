@@ -1,5 +1,5 @@
 from django.db import models
-from core.models import Language, CartBase
+from core.models import Language, CartBase, Settings
 from django.utils import timezone
 
 
@@ -107,5 +107,14 @@ class Cart(CartBase):
 
     user = models.ForeignKey(
         User,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='selected_user'
         )
+
+
+class Settings(Settings):
+
+    managers = models.ManyToManyField(User, blank=True)
+
+    def __str__(self):
+        return self.title

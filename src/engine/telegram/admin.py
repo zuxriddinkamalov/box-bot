@@ -5,3 +5,5 @@ import telegram.models as models
 admin.site.register(models.User)
 admin.site.register(models.Cart)
 admin.site.register(models.PaySystem)
+admin.site.register(models.Settings)
+

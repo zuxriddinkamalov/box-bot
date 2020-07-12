@@ -81,9 +81,11 @@ def CategoryKeyboard(user, page):
 
     buttons = Client.get_buttons(language, 2)
 
-    prev_button = InlineKeyboardButton(buttons[0].title, callback_data=f'next {data["next"]}')
+    prev_button = InlineKeyboardButton(buttons[0].title, callback_data=f'prev {data["prev"]}')
     empty_button = InlineKeyboardButton(f'{page}/{data["total"]}', callback_data=f'empty')
-    next_button = InlineKeyboardButton(buttons[1].title, callback_data=f'prev {data["prev"]}')
+    next_button = InlineKeyboardButton(buttons[1].title, callback_data=f'next {data["next"]}')
+    back_button = InlineKeyboardButton(buttons[2].title, callback_data=f'back')
+    
 
     end_buttons = BuildMenu(
         end_buttons,
@@ -95,7 +97,7 @@ def CategoryKeyboard(user, page):
         empty_button,
         next_button
     ])
-    print(f'\n\n{end_buttons}\n\n')
+    end_buttons.append([back_button])
 
     keyboard = InlineKeyboardMarkup()
     keyboard.inline_keyboard = end_buttons

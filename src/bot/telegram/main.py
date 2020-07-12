@@ -137,6 +137,38 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
         await bot.send_message(user, text, reply_markup=markup)
 
 
+@dp.callback_query_handler(state=states.User.Category)
+async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
+    user = int(callback_query.from_user.id)
+    data = callback_query.data
+
+    await bot.answer_callback_query(callback_query.id)
+
+    if "back" in data:
+
+        await bot.delete_message(user, callback_query.message.message_id)
+
+        await states.User.MainMenu.set()
+
+        text = Messages(user)['main_menu']
+        markup = keyboards.MainMenuKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+
+    if "prev" in data:
+
+        page = int(data.replace('prev ', ''))
+
+        markup = keyboards.CategoryKeyboard(user, page)
+        await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
+
+    if "next" in data:
+
+        page = int(data.replace('next ', ''))
+
+        markup = keyboards.CategoryKeyboard(user, page)
+        await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
+
+
 async def shutdown(dispatcher: Dispatcher):
 
     await dispatcher.storage.close()

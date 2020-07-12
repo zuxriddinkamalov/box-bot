@@ -113,13 +113,13 @@ class Client():
             active=True
             ).order_by("order")
 
-        pagination = Paginator(categories, 8)
+        pagination = Paginator(categories, 5)
         current_page = pagination.page(page)
 
         return {
             'categories': current_page.object_list,
-            'next': current_page.next_page_number if current_page.has_next() else False,
-            'prev': current_page.previous_page_number if current_page.has_previous() else False,
+            'next': current_page.next_page_number() if current_page.has_next() else 1,
+            'prev': current_page.previous_page_number() if current_page.has_previous() else pagination.num_pages,
             'total': pagination.num_pages
         }
 

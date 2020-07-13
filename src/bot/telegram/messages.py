@@ -10,6 +10,8 @@ def Messages(user):
         'ask_for_language': Client.get_message(2, lan),
         'main_menu': Client.get_message(3, lan),
         'category': Client.get_message(4, lan),
+        'product': Client.get_message(5, lan),
+        'quantity': Client.get_message(6, lan),
         # 'information': Client.getMessage(4, lan),
         # 'before_real_name': Client.getMessage(5, lan),
         # 'getRealName': Client.getMessage(6, lan),

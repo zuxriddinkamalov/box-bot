@@ -124,6 +124,35 @@ class Client():
         }
 
     @classmethod
+    def get_products(self, language: str, category: int, page: int):
+
+        products = core_models.Product.objects.filter(
+            language__title=str(language),
+            active=True,
+            category__id=category
+            ).order_by("order")
+
+        pagination = Paginator(products, 5)
+        current_page = pagination.page(page)
+
+        return {
+            'products': current_page.object_list,
+            'next': current_page.next_page_number() if current_page.has_next() else 1,
+            'prev': current_page.previous_page_number() if current_page.has_previous() else pagination.num_pages,
+            'total': pagination.num_pages
+        }
+
+    @classmethod
+    def get_category(self, number: int):
+
+        return core_models.Category.objects.get(pk=number)
+
+    @classmethod
+    def get_product(self, number: int):
+
+        return core_models.Product.objects.get(pk=number)
+
+    @classmethod
     def get_managers(self):
 
         return telegram_models.Settings.objects.filter(

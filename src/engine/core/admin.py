@@ -11,4 +11,22 @@ admin.site.register(models.Announcement)
 admin.site.register(models.Event)
 admin.site.register(models.CartBase)
 admin.site.register(models.Category)
-admin.site.register(models.Button)
+
+
+@admin.register(models.Button)
+class ButtonAdmin(admin.ModelAdmin):
+    list_display = ('id',
+                    'order',
+                    'title',
+                    'GetLanguage',
+                    'checkpoint')
+
+    def GetLanguage(self, obj):
+        return obj.language.title
+    GetLanguage.admin_order_field = 'language'
+    GetLanguage.short_description = 'Language'
+
+    ordering = ('id',
+                'order',
+                'checkpoint')
+    search_fields = ('id', 'order')

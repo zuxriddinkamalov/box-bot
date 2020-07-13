@@ -6,3 +6,6 @@ class User(StatesGroup):
     ChooseLanguage = State()
     MainMenu = State()
     Category = State()
+    Product = State()
+    ProductMenu = State()
+    Quantity = State()

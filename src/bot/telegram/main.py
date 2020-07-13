@@ -168,6 +168,227 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
         markup = keyboards.CategoryKeyboard(user, page)
         await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
 
+    if "category" in data:
+        # "Product choose handler"
+
+        await bot.delete_message(user, callback_query.message.message_id)
+
+        category = int(data.replace('category ', ''))
+
+        await states.User.Product.set()
+
+        current_category = Client.get_category(category)
+        text = current_category.description
+        photo = Client.get_photo(current_category)
+        # markup = None
+        markup = keyboards.ProductKeyboard(user, 1, category)
+
+        msg = await bot.send_photo(user, photo[0], caption=text, reply_markup=markup)
+
+        async with state.proxy() as data:
+
+            data['photo_message'] = msg.message_id
+            data['category'] = category
+
+        if not photo[1]:
+
+            Client.update_photo(photo[2], msg.photo[-1].file_id)
+
+        # text = Messages(user)['product']
+        # markup = keyboards.ProductKeyboard(user, 1)
+
+        # await bot.send_message(user, text, reply_markup=markup)
+
+
+@dp.callback_query_handler(state=states.User.Product)
+async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
+    user = int(callback_query.from_user.id)
+    data = callback_query.data
+
+    await bot.answer_callback_query(callback_query.id)
+
+    if "back" in data:
+
+        await bot.delete_message(user, callback_query.message.message_id)
+
+        text = Messages(user)['category']
+        await states.User.Category.set()
+
+        markup = keyboards.CategoryKeyboard(user, 1)
+        await bot.send_message(user, text, reply_markup=markup)
+
+    if "prev" in data:
+
+        async with state.proxy() as data:
+
+            category = data['category']
+
+        page = int(data.replace('prev ', ''))
+
+        markup = keyboards.ProductKeyboard(user, page, category)
+        await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
+
+    if "next" in data:
+
+        async with state.proxy() as data:
+
+            category = data['category']
+
+        page = int(data.replace('next ', ''))
+
+        markup = keyboards.ProductKeyboard(user, page, category)
+        await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
+
+    if "product" in data:
+        # "Product choose handler"
+
+        await bot.delete_message(user, callback_query.message.message_id)
+
+        product = int(data.replace('product ', ''))
+
+        await states.User.ProductMenu.set()
+
+        current_product = Client.get_product(product)
+        text = current_product.description
+        photo = Client.get_photo(current_product)
+        # markup = None
+        markup = keyboards.ProductDetailsKeyboard(user)
+
+        msg = await bot.send_photo(user, photo[0], caption=text, reply_markup=markup)
+
+        async with state.proxy() as data:
+
+            data['photo_message'] = msg.message_id
+            data['product'] = product
+
+        if not photo[1]:
+
+            Client.update_photo(photo[2], msg.photo[-1].file_id)  
+
+
+@dp.callback_query_handler(state=states.User.ProductMenu)
+async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
+    user = int(callback_query.from_user.id)
+    data = callback_query.data
+
+    await bot.answer_callback_query(callback_query.id)
+
+    if "back" in data:
+
+        async with state.proxy() as data:
+
+            category = data['category']
+
+        await bot.delete_message(user, callback_query.message.message_id)
+
+        await states.User.Product.set()
+
+        current_category = Client.get_category(category)
+        text = current_category.description
+        photo = Client.get_photo(current_category)
+        # markup = None
+        markup = keyboards.ProductKeyboard(user, 1, category)
+
+        msg = await bot.send_photo(user, photo[0], caption=text, reply_markup=markup)
+
+        async with state.proxy() as data:
+
+            data['photo_message'] = msg.message_id
+
+        if not photo[1]:
+
+            Client.update_photo(photo[2], msg.photo[-1].file_id)
+
+        # text = Messages(user)['product']
+        # markup = keyboards.ProductKeyboard(user, 1)
+
+        # await bot.send_message(user, text, reply_markup=markup)
+
+    if "add" in data:
+
+        await states.User.Quantity.set()
+
+        async with state.proxy() as data:
+
+            data['quantity'] = 1
+
+        text = Messages(user)['quantity']
+        markup = keyboards.QuantityKeyboard(user, 1)
+        await bot.edit_message_caption(user, callback_query.message.message_id, caption=text, reply_markup=markup)
+        # await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
+
+
+@dp.callback_query_handler(state=states.User.Quantity)
+async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
+    user = int(callback_query.from_user.id)
+    data = callback_query.data
+
+    await bot.answer_callback_query(callback_query.id)
+
+    if "back" in data:
+
+        async with state.proxy() as data:
+
+            product = data['product']
+
+        await bot.delete_message(user, callback_query.message.message_id)
+
+        await states.User.ProductMenu.set()
+
+        current_product = Client.get_product(product)
+        text = current_product.description
+        photo = Client.get_photo(current_product)
+        # markup = None
+        markup = keyboards.ProductDetailsKeyboard(user)
+
+        msg = await bot.send_photo(user, photo[0], caption=text, reply_markup=markup)
+
+        async with state.proxy() as data:
+
+            data['photo_message'] = msg.message_id
+
+        if not photo[1]:
+
+            Client.update_photo(photo[2], msg.photo[-1].file_id)
+
+    if "minus" in data:
+
+        async with state.proxy() as data:
+
+            quantity = int(data['quantity'])
+
+        quantity -= 1
+        if quantity == 1:
+            return
+
+        await states.User.Quantity.set()
+
+        text = Messages(user)['quantity']
+        markup = keyboards.QuantityKeyboard(user, quantity)
+        await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
+        # await bot.edit_message_caption(user, callback_query.message.message_id, caption=text, reply_markup=markup)
+        # await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
+
+    if "plus" in data:
+
+        async with state.proxy() as data:
+
+            quantity = int(data['quantity'])
+
+        quantity += 1
+
+        await states.User.Quantity.set()
+
+        text = Messages(user)['quantity']
+        markup = keyboards.QuantityKeyboard(user, quantity)
+        await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
+        # await bot.edit_message_caption(user, callback_query.message.message_id, caption=text, reply_markup=markup)
+        # await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
+        
+    if "accept" in data:
+        
+        pass
+
 
 async def shutdown(dispatcher: Dispatcher):
 

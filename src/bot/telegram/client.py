@@ -3,7 +3,7 @@ import traceback
 
 from aiogram.types import InputFile
 
-from db import proj_path, core_models, telegram_models
+from db import proj_path, core_models, telegram_models, Paginator
 
 
 class Client():
@@ -13,8 +13,8 @@ class Client():
 
         try:
             core_models.Language.objects.get(pk=1)
-            
-            print(f"CLIENT: connection stable")
+
+            print(f"CLIENT: connection is stable")
         except Exception as e:
             print(f"ERROR: connection lost")
 
@@ -97,13 +97,60 @@ class Client():
     @classmethod
     def get_buttons(self, language: str, checkpoint: int):
 
-        buttons = models.Button.objects.filter(
+        buttons = core_models.Button.objects.filter(
             language__title=str(language),
             checkpoint=int(checkpoint),
             active=True
-            ).order_by("number")
+            ).order_by("order")
 
         return buttons
+
+    @classmethod
+    def get_categories(self, language: str, page: int):
+
+        categories = core_models.Category.objects.filter(
+            language__title=str(language),
+            active=True
+            ).order_by("order")
+
+        pagination = Paginator(categories, 5)
+        current_page = pagination.page(page)
+
+        return {
+            'categories': current_page.object_list,
+            'next': current_page.next_page_number() if current_page.has_next() else 1,
+            'prev': current_page.previous_page_number() if current_page.has_previous() else pagination.num_pages,
+            'total': pagination.num_pages
+        }
+
+    @classmethod
+    def get_products(self, language: str, category: int, page: int):
+
+        products = core_models.Product.objects.filter(
+            language__title=str(language),
+            active=True,
+            category__id=category
+            ).order_by("order")
+
+        pagination = Paginator(products, 5)
+        current_page = pagination.page(page)
+
+        return {
+            'products': current_page.object_list,
+            'next': current_page.next_page_number() if current_page.has_next() else 1,
+            'prev': current_page.previous_page_number() if current_page.has_previous() else pagination.num_pages,
+            'total': pagination.num_pages
+        }
+
+    @classmethod
+    def get_category(self, number: int):
+
+        return core_models.Category.objects.get(pk=number)
+
+    @classmethod
+    def get_product(self, number: int):
+
+        return core_models.Product.objects.get(pk=number)
 
     @classmethod
     def get_managers(self):

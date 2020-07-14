@@ -195,19 +195,14 @@ def CartKeyboard(user):
     buttons = Client.get_buttons(language, 5)
     end_buttons = []
 
-    end_buttons.append(InlineKeyboardButton(buttons[0].title, callback_data=f'edit'))
-    end_buttons.append(InlineKeyboardButton(buttons[1].title, callback_data=f'order'))
-    end_buttons.append(InlineKeyboardButton(buttons[2].title, callback_data=f'clear'))
+    for button in buttons:
+
+        end_buttons.append(KeyboardButton(button.title))
 
     end_buttons = BuildMenu(
-        end_buttons,
+        end_buttons[:-1],
         2,
-        footer_buttons=[
-            InlineKeyboardButton(buttons[3].title, callback_data=f'back')
-        ]
+        footer_buttons=[end_buttons[-1]],
         )
 
-    keyboard = InlineKeyboardMarkup()
-    keyboard.inline_keyboard = end_buttons
-
-    return keyboard
+    return ReplyKeyboardMarkup(end_buttons, resize_keyboard=True, one_time_keyboard=True)

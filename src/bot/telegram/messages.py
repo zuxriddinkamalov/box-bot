@@ -68,7 +68,7 @@ def GenerateCart(user: int):
 
     if cart is None:
 
-        return [ Messages(user)['cart_is_empty'], False ]
+        return [Messages(user)['cart_is_empty'], False]
 
     position_text = Messages(user)['position_text']
     cart_header = Messages(user)['cart_header']
@@ -98,7 +98,7 @@ def GenerateCart(user: int):
                         str(position.count)
                     ).replace(
                         '{price}',
-                        str(position.product.price)
+                        '{:,}'.format(position.product.price * position.count).replace(',', ' ')
                     )
 
     # for counter in range(0, cart.positions.all().count()):
@@ -114,6 +114,8 @@ def GenerateCart(user: int):
     #             str(cart.positions.all()[counter].count)
     #         )
 
-    end_text += f'\n{cart_footer.replace("{cost}", str(cart.get_price()))}'
+    price = "{:,}".format(cart.get_price()).replace(",", " ")
+    end_text += f'\n{cart_footer.replace("{cost}", price)}'
 
-    return [ end_text, True ]
+    return [end_text, True]
+    

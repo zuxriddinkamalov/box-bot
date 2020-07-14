@@ -17,7 +17,7 @@ from aiogram.types import ReplyKeyboardRemove
 
 # bot import
 import client as ClientModule
-from messages import Messages
+from messages import Messages, GenerateCart
 import keyboards
 import states
 
@@ -75,7 +75,7 @@ async def process_start_command(message: types.Message, state: FSMContext):
         await states.User.MainMenu.set()
 
         text = Messages(user)['main_menu']
-        markup = keyboards.MainMenuKeyboard(user)
+        markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
         await bot.send_message(user, text, reply_markup=markup)
 
 
@@ -105,7 +105,7 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
         await states.User.MainMenu.set()
 
         text = Messages(user)['main_menu']
-        markup = keyboards.MainMenuKeyboard(user)
+        markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
         await bot.send_message(user, text, reply_markup=markup)
 
     except Exception as e:
@@ -124,8 +124,14 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
         button_code = Client.get_buttons(language, 1).get(
             title=recieved_text
             ).button_code
+        
+        cart_title = None
+
     except Exception as e:
-        return
+        button_code = None
+        cart_title = Client.get_buttons(language, 1).get(
+            button_code='cart'
+            ).title.split(' ')[0]
 
     if button_code == 'catalog':
         # "Catalog button handler"
@@ -135,6 +141,31 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
 
         markup = keyboards.CategoryKeyboard(user, 1)
         await bot.send_message(user, text, reply_markup=markup)
+
+    is_cart_str = recieved_text.split(' ')[0]
+    if is_cart_str == cart_title:
+        # "Cart button handler"
+
+        data = GenerateCart(user)
+        text = data[0]
+
+        if data[1]:
+
+            await states.User.Cart.set()
+
+            markup = keyboards.CartKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
+
+        else:
+
+            markup = None
+            await bot.send_message(user, text, reply_markup=markup)
+
+            await states.User.MainMenu.set()
+
+            text = Messages(user)['main_menu']
+            markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
+            await bot.send_message(user, text, reply_markup=markup)
 
 
 @dp.callback_query_handler(state=states.User.Category)
@@ -151,7 +182,7 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
         await states.User.MainMenu.set()
 
         text = Messages(user)['main_menu']
-        markup = keyboards.MainMenuKeyboard(user)
+        markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
         await bot.send_message(user, text, reply_markup=markup)
 
     if "prev" in data:
@@ -323,8 +354,6 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
     user = int(callback_query.from_user.id)
     data = callback_query.data
 
-    await bot.answer_callback_query(callback_query.id)
-
     if "back" in data:
 
         async with state.proxy() as data:
@@ -356,10 +385,13 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
         async with state.proxy() as data:
 
             quantity = int(data['quantity'])
-
         quantity -= 1
-        if quantity == 1:
+
+        if quantity == 0:
             return
+        
+        async with state.proxy() as data:
+            data['quantity'] = quantity
 
         await states.User.Quantity.set()
 
@@ -374,8 +406,8 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
         async with state.proxy() as data:
 
             quantity = int(data['quantity'])
-
-        quantity += 1
+            quantity += 1
+            data['quantity'] = quantity
 
         await states.User.Quantity.set()
 
@@ -384,10 +416,31 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
         await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
         # await bot.edit_message_caption(user, callback_query.message.message_id, caption=text, reply_markup=markup)
         # await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
-        
+
     if "accept" in data:
-        
-        pass
+
+        # "Catalog button handler"
+        async with state.proxy() as data:
+
+            quantity = int(data['quantity'])
+            product = int(data['product'])
+
+        Client.add_to_cart(user, product, quantity)
+
+        await bot.delete_message(user, callback_query.message.message_id)
+
+        text = Messages(user)['cart_added']
+        await bot.answer_callback_query(callback_query.id, text)
+
+        text = Messages(user)['category']
+        await states.User.Category.set()
+
+        markup = keyboards.CategoryKeyboard(user, 1)
+        await bot.send_message(user, text, reply_markup=markup)
+
+    await bot.answer_callback_query(callback_query.id)
+
+    return
 
 
 async def shutdown(dispatcher: Dispatcher):

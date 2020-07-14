@@ -1,8 +1,11 @@
+from client import core_models
 from client import Client as client
+
 Client = client()
 
 
-def Messages(user):
+def Messages(user: int):
+
     lan = Client.get_user_language(int(user))
 
     MESSAGES = {
@@ -12,6 +15,11 @@ def Messages(user):
         'category': Client.get_message(4, lan),
         'product': Client.get_message(5, lan),
         'quantity': Client.get_message(6, lan),
+        'cart_added': Client.get_message(7, lan),
+        'position_text': Client.get_message(8, lan),
+        'cart_header': Client.get_message(9, lan),
+        'cart_is_empty': Client.get_message(10, lan),
+        'cart_footer': Client.get_message(11, lan),
         # 'information': Client.getMessage(4, lan),
         # 'before_real_name': Client.getMessage(5, lan),
         # 'getRealName': Client.getMessage(6, lan),
@@ -51,3 +59,61 @@ def Messages(user):
     }
 
     return MESSAGES
+
+
+def GenerateCart(user: int):
+
+    cart = Client.get_cart(user)
+    language = Client.get_user_language(user)
+
+    if cart is None:
+
+        return [ Messages(user)['cart_is_empty'], False ]
+
+    position_text = Messages(user)['position_text']
+    cart_header = Messages(user)['cart_header']
+    cart_footer = Messages(user)['cart_footer']
+
+    end_text = f'{cart_header}'
+
+    categories = core_models.Category.objects.filter(
+            language__title=str(language),
+            active=True
+            ).order_by("order")
+
+    for category in categories:
+
+        positions = cart.positions.all().filter(product__category=category)
+        if positions.count() != 0:
+
+            end_text += f'{category.title.upper()}\n'
+
+            for position in positions:
+
+                end_text = end_text + position_text.replace(
+                    '{product}',
+                    position.product.title
+                    ).replace(
+                        '{product_count}',
+                        str(position.count)
+                    ).replace(
+                        '{price}',
+                        str(position.product.price)
+                    )
+
+    # for counter in range(0, cart.positions.all().count()):
+
+    #     end_text = end_text + position_text.replace(
+    #         '{count}',
+    #         str(counter + 1)
+    #         ).replace(
+    #             '{product}',
+    #             cart.positions.all()[counter].product.title
+    #         ).replace(
+    #             '{product_count}',
+    #             str(cart.positions.all()[counter].count)
+    #         )
+
+    end_text += f'\n{cart_footer.replace("{cost}", str(cart.get_price()))}'
+
+    return [ end_text, True ]

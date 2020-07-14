@@ -189,7 +189,7 @@ class Client():
             return 0
 
     @classmethod
-    def get_cart(self, user):
+    def get_cart(self, user: int):
 
         user = self.get_user(user)
 
@@ -202,6 +202,14 @@ class Client():
         except Exception as e:
 
             return None
+
+    @classmethod
+    def clear_cart(self, user: int):
+
+        cart = self.get_cart(user)
+        rs = cart.positions.all().delete()
+        print(rs)
+        cart.delete()
 
     @classmethod
     def get_category(self, number: int):

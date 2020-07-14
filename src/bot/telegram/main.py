@@ -2,6 +2,8 @@
 import logging
 # import requests
 
+import asyncio
+
 
 # aiogram import
 from aiogram import Bot, types
@@ -23,6 +25,7 @@ import states
 
 # system import
 import os
+from datetime import datetime
 import aioredis
 
 # init settings
@@ -389,7 +392,7 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
 
         if quantity == 0:
             return
-        
+
         async with state.proxy() as data:
             data['quantity'] = quantity
 
@@ -441,6 +444,90 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
     await bot.answer_callback_query(callback_query.id)
 
     return
+
+
+@dp.message_handler(state=states.User.Cart)
+async def user_ammount_handler(message: types.Message, state: FSMContext):
+    user = int(message.from_user.id)
+    recieved_text = message.text
+    language = Client.get_user_language(user)
+
+    try:
+        button_code = Client.get_buttons(language, 5).get(
+            title=recieved_text
+            ).button_code
+
+    except Exception as e:
+        return
+
+    if "back" in button_code:
+
+        await states.User.MainMenu.set()
+
+        text = Messages(user)['main_menu']
+        markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
+        await bot.send_message(user, text, reply_markup=markup)
+
+    if 'edit' in button_code:
+
+        await states.User.Edit.set()
+
+        text = Messages(user)['edit_menu']
+        markup = keyboards.CartEditKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+
+    if 'clear' in button_code:
+
+        await states.User.MainMenu.set()
+
+        Client.clear_cart(user)
+
+        counter = 5
+
+        text = Messages(user)['cart_cleared']
+        start_time = datetime.now()
+        markup = keyboards.CancelButton(user, counter)
+        msg = await bot.send_message(user, text, reply_markup=markup)
+
+        text = Messages(user)['main_menu']
+        markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
+        await bot.send_message(user, text, reply_markup=markup)
+
+        while True:
+
+            if counter != 0:
+                await asyncio.sleep(1)
+
+                counter -= 1
+
+                markup = keyboards.CancelButton(user, counter)
+                await bot.edit_message_reply_markup(user, msg.message_id, reply_markup=markup)
+
+            else:
+
+                markup = None
+                await bot.edit_message_reply_markup(user, msg.message_id, reply_markup=markup)
+                break
+
+
+@dp.callback_query_handler(state=states.User.Edit)
+async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
+    user = int(callback_query.from_user.id)
+    data = callback_query.data
+
+    if "back" in data:
+
+        data = GenerateCart(user)
+        text = data[0]
+
+        await states.User.Cart.set()
+
+        markup = keyboards.CartKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+
+    if 'product' in data:
+
+        pass
 
 
 async def shutdown(dispatcher: Dispatcher):

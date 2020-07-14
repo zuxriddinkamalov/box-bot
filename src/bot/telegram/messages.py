@@ -20,6 +20,8 @@ def Messages(user: int):
         'cart_header': Client.get_message(9, lan),
         'cart_is_empty': Client.get_message(10, lan),
         'cart_footer': Client.get_message(11, lan),
+        'edit_menu': Client.get_message(12, lan),
+        'cart_cleared': Client.get_message(13, lan),
         # 'information': Client.getMessage(4, lan),
         # 'before_real_name': Client.getMessage(5, lan),
         # 'getRealName': Client.getMessage(6, lan),
@@ -118,4 +120,3 @@ def GenerateCart(user: int):
     end_text += f'\n{cart_footer.replace("{cost}", price)}'
 
     return [end_text, True]
-    

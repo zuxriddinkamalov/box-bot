@@ -206,3 +206,49 @@ def CartKeyboard(user):
         )
 
     return ReplyKeyboardMarkup(end_buttons, resize_keyboard=True, one_time_keyboard=True)
+
+
+def CartEditKeyboard(user):
+
+    language = Client.get_user_language(user)
+
+    button = Client.get_buttons(language, 6).first()
+    end_buttons = []
+
+    positions = Client.get_cart(user).positions.all()
+
+    for position in positions:
+
+        end_buttons.append(InlineKeyboardButton(f'{position.count} x {position.product.title}', callback_data=f'position {position.id}'))
+
+    end_buttons = BuildMenu(
+        end_buttons,
+        1,
+        footer_buttons=[
+            InlineKeyboardButton(button.title, callback_data=f'back')]
+        )
+
+    keyboard = InlineKeyboardMarkup()
+    keyboard.inline_keyboard = end_buttons
+
+    return keyboard
+
+
+def CancelButton(user, counter):
+
+    language = Client.get_user_language(user)
+
+    button = Client.get_buttons(language, 7).first()
+    end_buttons = []
+
+    end_buttons.append(InlineKeyboardButton(button.title.replace('( {counter} )', f'( {counter} )' if counter != 0 else ""), callback_data=f'cancel'))
+
+    end_buttons = BuildMenu(
+        end_buttons,
+        1
+        )
+
+    keyboard = InlineKeyboardMarkup()
+    keyboard.inline_keyboard = end_buttons
+
+    return keyboard

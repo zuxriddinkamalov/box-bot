@@ -10,3 +10,4 @@ class User(StatesGroup):
     ProductMenu = State()
     Quantity = State()
     Cart = State()
+    Edit = State()

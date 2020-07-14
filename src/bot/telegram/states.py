@@ -9,3 +9,4 @@ class User(StatesGroup):
     Product = State()
     ProductMenu = State()
     Quantity = State()
+    Cart = State()

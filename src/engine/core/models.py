@@ -642,12 +642,19 @@ class Position(models.Model):
         return price
 
     def __str__(self):
-        return f'{self.language.title} - {self.title}'
+        return f'{self.product.title} - {self.count}'
 
 
 class CartBase(models.Model):
 
     positions = models.ManyToManyField(Position)
+
+    active = models.BooleanField(
+        'Active',
+        default=True,
+        null=False,
+        blank=False
+        )
 
     created_at = models.DateTimeField(
         'Created at',
@@ -670,7 +677,7 @@ class CartBase(models.Model):
             total += position.get_price()
         return total
 
-    def get_count():
+    def get_count(self):
 
         count = 0
 

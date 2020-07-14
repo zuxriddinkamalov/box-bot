@@ -47,7 +47,7 @@ class Client():
 
         return core_models.Message.objects.filter(
             language__title=str(lan)
-            ).get(number=number).text
+            ).get(number=number).text.replace('\\n', '\n')
 
     @classmethod
     def get_user_language(self, user: int):
@@ -141,6 +141,67 @@ class Client():
             'prev': current_page.previous_page_number() if current_page.has_previous() else pagination.num_pages,
             'total': pagination.num_pages
         }
+
+    @classmethod
+    def add_to_cart(self, user, product: int, quantity: int):
+
+        user = self.get_user(user)
+
+        try:
+
+            cart = telegram_models.Cart.objects.filter(user=user).get(active=True)
+
+            if cart.positions.all().filter(product__id=product).count() != 0:
+                position = cart.positions.all().get(product__id=product)
+                position.count = position.count + quantity
+                position.save()
+
+            return cart
+
+        except Exception as e:
+
+            cart = telegram_models.Cart()
+            cart.user = user
+            cart.save()
+
+        position = core_models.Position()
+        position.product = core_models.Product.objects.get(pk=product)
+        position.count = quantity
+        position.save()
+
+        cart.positions.add(position)
+
+        return cart
+
+    @classmethod
+    def get_cart_count(self, user):
+
+        user = self.get_user(user)
+
+        try:
+
+            cart = telegram_models.Cart.objects.filter(user=user).get(active=True)
+
+            return cart.get_count()
+
+        except Exception as e:
+
+            return 0
+
+    @classmethod
+    def get_cart(self, user):
+
+        user = self.get_user(user)
+
+        try:
+
+            cart = telegram_models.Cart.objects.filter(user=user).get(active=True)
+
+            return cart
+
+        except Exception as e:
+
+            return None
 
     @classmethod
     def get_category(self, number: int):

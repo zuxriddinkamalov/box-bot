@@ -11,3 +11,6 @@ class User(StatesGroup):
     Quantity = State()
     Cart = State()
     Edit = State()
+    EditQuantity = State()
+    Phone = State()
+    RealName = State()

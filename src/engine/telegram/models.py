@@ -64,6 +64,14 @@ class User(models.Model):
         null=True
         )
 
+    real_name = models.CharField(
+        'Last Name',
+        default=None,
+        max_length=255,
+        blank=True,
+        null=True
+        )
+
     username = models.CharField(
         'Username',
         default=None,

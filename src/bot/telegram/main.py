@@ -127,14 +127,15 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
         button_code = Client.get_buttons(language, 1).get(
             title=recieved_text
             ).button_code
-        
+
         cart_title = None
 
     except Exception as e:
+
         button_code = None
         cart_title = Client.get_buttons(language, 1).get(
             button_code='cart'
-            ).title.split(' ')[0]
+            ).title.split(' [')[0]
 
     if button_code == 'catalog':
         # "Catalog button handler"
@@ -480,7 +481,7 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
 
         await states.User.MainMenu.set()
 
-        Client.clear_cart(user)
+        Client.cancel_cart(user)
 
         counter = 5
 
@@ -501,13 +502,97 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
                 counter -= 1
 
                 markup = keyboards.CancelButton(user, counter)
-                await bot.edit_message_reply_markup(user, msg.message_id, reply_markup=markup)
+                try:
+                    await bot.edit_message_reply_markup(user, msg.message_id, reply_markup=markup)
+                except Exception as e:
+                    break
 
             else:
 
                 markup = None
                 await bot.edit_message_reply_markup(user, msg.message_id, reply_markup=markup)
+                Client.clear_cart(user)
                 break
+
+    if 'order' in button_code:
+
+        if Client.is_verified(user):
+
+            pass
+
+        else:
+
+            await states.User.Phone.set()
+
+            text = Messages(user)['add_phone']
+            markup = keyboards.CartEditKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
+
+
+@dp.message_handler(state=states.User.Phone, content_types=types.ContentType.CONTACT)
+async def user_contact_handler(message: types.Message, state: FSMContext):
+    user = message.from_user.id
+    phone = message.contact.phone_number
+
+    Client.set_phone(user, phone)
+
+    if Client.has_real_name(user):
+
+        pass
+
+    else:
+
+        text = Messages(user)['phone_set']
+
+        await states.User.RealName.set()
+
+        markup = None
+        await bot.send_message(user, text, reply_markup=markup)
+
+    return
+
+
+# @dp.message_handler(state=states.User.Phone)
+# async def user_ammount_handler(message: types.Message, state: FSMContext):
+#     user = message.from_user.id
+#     recieved_text = message.text.replace("+", "")
+
+#     lan = Client.get_user_language(user)
+
+#     buttonText = Client.getButtons(lan, 8)[0].title
+
+#     if recieved_text == buttonText:
+
+#         await states.User.MainMenu.set()
+
+#         text = Messages(user)['main_menu']
+#         markup = keyboards.MainMenuKeyboard(user)
+#         await bot.send_message(user, text, reply_markup=markup)
+
+#         return
+    
+#     if str(recieved_text).isdigit():
+#         if len(recieved_text) == 9:
+#             recieved_text = f"998{recieved_text}"
+
+#         if len(recieved_text) == 12:
+#             Client.setPhone(user, recieved_text)
+
+#             text = Messages(user)['accept_data']
+#             await states.User.PhoneAndRealNameAccept.set()
+
+#             markup = keyboards.AcceptOrBack(user)
+#             await bot.send_message(user, text, reply_markup=markup)
+#         else:
+#             text = Messages(user)['phone_length']
+#             markup = None
+#             await bot.send_message(user, text, reply_markup=markup)
+#     else:
+#         text = Messages(user)['phone_only_digits']
+#         markup = None
+#         await bot.send_message(user, text, reply_markup=markup)
+
+#     return
 
 
 @dp.callback_query_handler(state=states.User.Edit)
@@ -517,6 +602,8 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
 
     if "back" in data:
 
+        await bot.delete_message(user, callback_query.message.message_id)
+
         data = GenerateCart(user)
         text = data[0]
 
@@ -525,9 +612,135 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
         markup = keyboards.CartKeyboard(user)
         await bot.send_message(user, text, reply_markup=markup)
 
-    if 'product' in data:
+    if 'position' in data:
 
-        pass
+        await bot.delete_message(user, callback_query.message.message_id)
+
+        position = int(data.replace('position ', ''))
+        position = ClientModule.core_models.Position.objects.get(pk=position)
+
+        await states.User.EditQuantity.set()
+
+        async with state.proxy() as data:
+            data['quantity'] = position.count
+            data['position'] = position.id
+
+        current_product = position.product
+        photo = Client.get_photo(current_product)
+        # markup = None
+        text = Messages(user)['quantity']
+        markup = keyboards.QuantityKeyboard(user, position.count)
+
+        msg = await bot.send_photo(user, photo[0], caption=text, reply_markup=markup)
+
+        async with state.proxy() as data:
+
+            data['photo_message'] = msg.message_id
+
+        if not photo[1]:
+
+            Client.update_photo(photo[2], msg.photo[-1].file_id)
+
+        # await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
+
+
+@dp.callback_query_handler(state=states.User.MainMenu)
+async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
+    user = int(callback_query.from_user.id)
+    data = callback_query.data
+
+    if "cancel" in data:
+
+        await bot.delete_message(user, callback_query.message.message_id)
+        await bot.delete_message(user, callback_query.message.message_id + 1)
+
+        Client.revoke_cart(user)
+
+        text = Messages(user)['cart_restored']
+
+        markup = None
+        await bot.send_message(user, text, reply_markup=markup)
+
+        text = Messages(user)['main_menu']
+        markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
+        await bot.send_message(user, text, reply_markup=markup)
+
+
+@dp.callback_query_handler(state=states.User.EditQuantity)
+async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
+    user = int(callback_query.from_user.id)
+    data = callback_query.data
+
+    if "back" in data:
+
+        await bot.delete_message(user, callback_query.message.message_id)
+
+        await states.User.Edit.set()
+
+        text = Messages(user)['edit_menu']
+        markup = keyboards.CartEditKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+
+    if "minus" in data:
+
+        async with state.proxy() as data:
+
+            quantity = int(data['quantity'])
+        quantity -= 1
+
+        if quantity == 0:
+            return
+
+        async with state.proxy() as data:
+            data['quantity'] = quantity
+
+        await states.User.EditQuantity.set()
+
+        text = Messages(user)['quantity']
+        markup = keyboards.QuantityKeyboard(user, quantity)
+        await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
+        # await bot.edit_message_caption(user, callback_query.message.message_id, caption=text, reply_markup=markup)
+        # await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
+
+    if "plus" in data:
+
+        async with state.proxy() as data:
+
+            quantity = int(data['quantity'])
+            quantity += 1
+            data['quantity'] = quantity
+
+        await states.User.EditQuantity.set()
+
+        text = Messages(user)['quantity']
+        markup = keyboards.QuantityKeyboard(user, quantity)
+        await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
+        # await bot.edit_message_caption(user, callback_query.message.message_id, caption=text, reply_markup=markup)
+        # await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
+
+    if "accept" in data:
+
+        # "Catalog button handler"
+        async with state.proxy() as data:
+
+            quantity = int(data['quantity'])
+            position = int(data['position'])
+
+        position = ClientModule.core_models.Position.objects.get(pk=position)
+        position.count = quantity
+        position.save()
+
+        await bot.delete_message(user, callback_query.message.message_id)
+
+        await states.User.Edit.set()
+
+        text = Messages(user)['edit_menu']
+        markup = keyboards.CartEditKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+
+    await bot.answer_callback_query(callback_query.id)
+
+    return
 
 
 async def shutdown(dispatcher: Dispatcher):

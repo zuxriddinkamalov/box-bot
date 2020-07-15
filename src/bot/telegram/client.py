@@ -43,6 +43,18 @@ class Client():
             }
 
     @classmethod
+    def is_verified(self, user: int):
+        user = self.get_user(user)
+
+        return True if user.phone else False
+
+    @classmethod
+    def has_real_name(self, user: int):
+        user = self.get_user(user)
+
+        return True if user.real_name else False
+
+    @classmethod
     def get_message(self, number: int, lan: str):
 
         return core_models.Message.objects.filter(
@@ -149,7 +161,7 @@ class Client():
 
         try:
 
-            cart = telegram_models.Cart.objects.filter(user=user).get(active=True)
+            cart = telegram_models.Cart.objects.filter(user=user, canceled=False).get(active=True)
 
             if cart.positions.all().filter(product__id=product).count() != 0:
                 position = cart.positions.all().get(product__id=product)
@@ -180,7 +192,7 @@ class Client():
 
         try:
 
-            cart = telegram_models.Cart.objects.filter(user=user).get(active=True)
+            cart = telegram_models.Cart.objects.filter(user=user, canceled=False).get(active=True)
 
             return cart.get_count()
 
@@ -195,7 +207,7 @@ class Client():
 
         try:
 
-            cart = telegram_models.Cart.objects.filter(user=user).get(active=True)
+            cart = telegram_models.Cart.objects.filter(user=user, canceled=False).get(active=True)
 
             return cart
 
@@ -206,10 +218,33 @@ class Client():
     @classmethod
     def clear_cart(self, user: int):
 
-        cart = self.get_cart(user)
+        user = self.get_user(user)
+
+        cart = telegram_models.Cart.objects.filter(user=user, canceled=True).get(active=True)
         rs = cart.positions.all().delete()
-        print(rs)
         cart.delete()
+
+        return rs
+
+    @classmethod
+    def cancel_cart(self, user: int):
+
+        cart = self.get_cart(user)
+        cart.canceled = True
+        cart.save()
+
+        return cart
+
+    @classmethod
+    def revoke_cart(self, user: int):
+
+        user = self.get_user(user)
+
+        cart = telegram_models.Cart.objects.filter(user=user, canceled=True).get(active=True)
+        cart.canceled = False
+        cart.save()
+
+        return cart
 
     @classmethod
     def get_category(self, number: int):
@@ -253,6 +288,13 @@ class Client():
 
         current_user = telegram_models.User.objects.get(chat_id=user)
         current_user.phone = phone
+        current_user.save()
+
+    @classmethod
+    def set_real_name(self, user: int, name: str):
+
+        current_user = telegram_models.User.objects.get(chat_id=user)
+        current_user.real_name = name
         current_user.save()
 
     @classmethod

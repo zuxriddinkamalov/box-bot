@@ -35,7 +35,7 @@ class PaySystem(models.Model):
 
 class User(models.Model):
 
-    chat_id = models.IntegerField(
+    chat_id = models.BigIntegerField(
         'Chat id',
         default=0,
         blank=False,
@@ -64,6 +64,14 @@ class User(models.Model):
         null=True
         )
 
+    real_name = models.CharField(
+        'Last Name',
+        default=None,
+        max_length=255,
+        blank=True,
+        null=True
+        )
+
     username = models.CharField(
         'Username',
         default=None,
@@ -72,7 +80,7 @@ class User(models.Model):
         null=True
         )
 
-    phone = models.PositiveIntegerField(
+    phone = models.BigIntegerField(
         'Phone',
         default=None,
         blank=True,

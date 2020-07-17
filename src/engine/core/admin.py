@@ -18,6 +18,7 @@ class ButtonAdmin(admin.ModelAdmin):
     list_display = ('id',
                     'order',
                     'title',
+                    'button_code',
                     'GetLanguage',
                     'checkpoint')
 

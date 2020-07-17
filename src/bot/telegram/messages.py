@@ -20,6 +20,18 @@ def Messages(user: int):
         'cart_header': Client.get_message(9, lan),
         'cart_is_empty': Client.get_message(10, lan),
         'cart_footer': Client.get_message(11, lan),
+        'edit_menu': Client.get_message(12, lan),
+        'cart_cleared': Client.get_message(13, lan),
+        'cart_restored': Client.get_message(14, lan),
+        'add_phone': Client.get_message(15, lan),
+        'phone_set': Client.get_message(16, lan),
+        'phone_length': Client.get_message(17, lan),
+        'phone_only_digits': Client.get_message(18, lan),
+        'delivery': Client.get_message(19, lan),
+        'real_name_get': Client.get_message(20, lan),
+        'location': Client.get_message(21, lan),
+        'time_set_delivery': Client.get_message(22, lan),
+        'time_set_self': Client.get_message(23, lan),
         # 'information': Client.getMessage(4, lan),
         # 'before_real_name': Client.getMessage(5, lan),
         # 'getRealName': Client.getMessage(6, lan),
@@ -68,7 +80,7 @@ def GenerateCart(user: int):
 
     if cart is None:
 
-        return [ Messages(user)['cart_is_empty'], False ]
+        return [Messages(user)['cart_is_empty'], False]
 
     position_text = Messages(user)['position_text']
     cart_header = Messages(user)['cart_header']
@@ -98,7 +110,7 @@ def GenerateCart(user: int):
                         str(position.count)
                     ).replace(
                         '{price}',
-                        str(position.product.price)
+                        '{:,}'.format(position.product.price * position.count).replace(',', ' ')
                     )
 
     # for counter in range(0, cart.positions.all().count()):
@@ -114,6 +126,7 @@ def GenerateCart(user: int):
     #             str(cart.positions.all()[counter].count)
     #         )
 
-    end_text += f'\n{cart_footer.replace("{cost}", str(cart.get_price()))}'
+    price = "{:,}".format(cart.get_price()).replace(",", " ")
+    end_text += f'\n{cart_footer.replace("{cost}", price)}'
 
-    return [ end_text, True ]
+    return [end_text, True]

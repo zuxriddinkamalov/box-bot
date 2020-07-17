@@ -14,3 +14,6 @@ class User(StatesGroup):
     EditQuantity = State()
     Phone = State()
     RealName = State()
+    Delivery = State()
+    Location = State()
+    Time = State()

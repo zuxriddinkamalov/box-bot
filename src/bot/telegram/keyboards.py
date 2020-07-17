@@ -1,4 +1,5 @@
 from client import Client as client
+import client as Client_module
 
 from aiogram.types import ReplyKeyboardRemove, \
     ReplyKeyboardMarkup, KeyboardButton, \
@@ -31,7 +32,7 @@ def BuildMenu(buttons,
 
 def LanguageKeyboard(user):
 
-    buttons = Client.core_models.Language.objects.all().order_by('order')
+    buttons = Client_module.core_models.Language.objects.all().order_by('order')
     end_buttons = []
 
     for button in buttons:
@@ -246,6 +247,68 @@ def CancelButton(user, counter):
     end_buttons = BuildMenu(
         end_buttons,
         1
+        )
+
+    keyboard = InlineKeyboardMarkup()
+    keyboard.inline_keyboard = end_buttons
+
+    return keyboard
+
+
+def ContactKeyboard(user):
+
+    language = Client.get_user_language(user)
+
+    buttons = Client.get_buttons(language, 8)
+
+    return ReplyKeyboardMarkup([[KeyboardButton(buttons[0].title, request_contact=True)], [KeyboardButton(buttons[1].title)]], resize_keyboard=True, one_time_keyboard=True)
+
+
+def DeliveryKeyboard(user):
+
+    language = Client.get_user_language(user)
+
+    buttons = Client.get_buttons(language, 9)
+    end_buttons = []
+
+    for button in buttons:
+
+        end_buttons.append(KeyboardButton(button.title))
+
+    end_buttons = BuildMenu(
+        end_buttons[:-1],
+        2,
+        footer_buttons=[end_buttons[-1]],
+        )
+
+    return ReplyKeyboardMarkup(end_buttons, resize_keyboard=True, one_time_keyboard=True)
+
+
+def LocationKeyboard(user):
+
+    language = Client.get_user_language(user)
+
+    buttons = Client.get_buttons(language, 10)
+
+    return ReplyKeyboardMarkup([[KeyboardButton(buttons[0].title, request_location=True)], [KeyboardButton(buttons[1].title)]], resize_keyboard=True, one_time_keyboard=True)
+
+
+def TimeKeyboard(user):
+
+    language = Client.get_user_language(user)
+
+    buttons = Client.get_buttons(language, 11)
+    end_buttons = []
+
+    for button in buttons:
+        end_buttons.append(
+            InlineKeyboardButton(button.title, callback_data=f'{button.button_code}')
+            )
+
+    end_buttons = BuildMenu(
+        end_buttons[:-1],
+        1,
+        footer_buttons=[end_buttons[-1]],
         )
 
     keyboard = InlineKeyboardMarkup()

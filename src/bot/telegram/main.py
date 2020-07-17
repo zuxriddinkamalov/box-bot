@@ -518,15 +518,46 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
 
         if Client.is_verified(user):
 
-            pass
+            if Client.has_real_name(user):
 
+                text = Messages(user)['delivery']
+                await states.User.Delivery.set()
+
+                markup = keyboards.DeliveryKeyboard(user)
+                await bot.send_message(user, text, reply_markup=markup)
+
+            else:
+
+                await states.User.RealName.set()
+
+                text = Messages(user)['real_name_get']
+
+                markup = None
+                await bot.send_message(user, text, reply_markup=markup)
         else:
 
             await states.User.Phone.set()
 
             text = Messages(user)['add_phone']
-            markup = keyboards.CartEditKeyboard(user)
+            markup = keyboards.ContactKeyboard(user)
             await bot.send_message(user, text, reply_markup=markup)
+
+
+@dp.message_handler(state=states.User.RealName)
+async def user_ammount_handler(message: types.Message, state: FSMContext):
+
+    user = message.from_user.id
+    recieved_text = message.text
+
+    Client.set_real_name(user, recieved_text)
+
+    text = Messages(user)['delivery']
+    await states.User.Delivery.set()
+
+    markup = keyboards.DeliveryKeyboard(user)
+    await bot.send_message(user, text, reply_markup=markup)
+
+    return
 
 
 @dp.message_handler(state=states.User.Phone, content_types=types.ContentType.CONTACT)
@@ -538,13 +569,22 @@ async def user_contact_handler(message: types.Message, state: FSMContext):
 
     if Client.has_real_name(user):
 
-        pass
+        text = Messages(user)['delivery']
+        await states.User.Delivery.set()
+
+        markup = keyboards.DeliveryKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
 
     else:
 
         text = Messages(user)['phone_set']
 
+        markup = None
+        await bot.send_message(user, text, reply_markup=markup)
+        
         await states.User.RealName.set()
+
+        text = Messages(user)['real_name_get']
 
         markup = None
         await bot.send_message(user, text, reply_markup=markup)
@@ -552,47 +592,76 @@ async def user_contact_handler(message: types.Message, state: FSMContext):
     return
 
 
-# @dp.message_handler(state=states.User.Phone)
-# async def user_ammount_handler(message: types.Message, state: FSMContext):
-#     user = message.from_user.id
-#     recieved_text = message.text.replace("+", "")
+@dp.message_handler(state=states.User.Phone)
+async def user_ammount_handler(message: types.Message, state: FSMContext):
 
-#     lan = Client.get_user_language(user)
+    user = int(message.from_user.id)
+    recieved_text = message.text
+    language = Client.get_user_language(user)
 
-#     buttonText = Client.getButtons(lan, 8)[0].title
+    try:
+        button_code = Client.get_buttons(language, 8).get(
+            title=recieved_text
+            ).button_code
 
-#     if recieved_text == buttonText:
+    except Exception as e:
 
-#         await states.User.MainMenu.set()
+        pass
 
-#         text = Messages(user)['main_menu']
-#         markup = keyboards.MainMenuKeyboard(user)
-#         await bot.send_message(user, text, reply_markup=markup)
+    if "back" in button_code:
 
-#         return
-    
-#     if str(recieved_text).isdigit():
-#         if len(recieved_text) == 9:
-#             recieved_text = f"998{recieved_text}"
+        data = GenerateCart(user)
+        text = data[0]
 
-#         if len(recieved_text) == 12:
-#             Client.setPhone(user, recieved_text)
+        await states.User.Cart.set()
 
-#             text = Messages(user)['accept_data']
-#             await states.User.PhoneAndRealNameAccept.set()
+        markup = keyboards.CartKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
 
-#             markup = keyboards.AcceptOrBack(user)
-#             await bot.send_message(user, text, reply_markup=markup)
-#         else:
-#             text = Messages(user)['phone_length']
-#             markup = None
-#             await bot.send_message(user, text, reply_markup=markup)
-#     else:
-#         text = Messages(user)['phone_only_digits']
-#         markup = None
-#         await bot.send_message(user, text, reply_markup=markup)
+        return
 
-#     return
+    if str(recieved_text).isdigit():
+        if len(recieved_text) == 9:
+            recieved_text = f"998{recieved_text}"
+
+        if len(recieved_text) == 12:
+
+            Client.set_phone(user, phone)
+
+            if Client.has_real_name(user):
+
+                text = Messages(user)['delivery']
+                await states.User.Delivery.set()
+
+                markup = keyboards.DeliveryKeyboard(user)
+                await bot.send_message(user, text, reply_markup=markup)
+
+            else:
+
+                text = Messages(user)['phone_set']
+
+                markup = None
+                await bot.send_message(user, text, reply_markup=markup)
+                
+                await states.User.RealName.set()
+
+                text = Messages(user)['real_name_get']
+
+                markup = None
+                await bot.send_message(user, text, reply_markup=markup)
+
+        else:
+
+            text = Messages(user)['phone_length']
+            markup = None
+            await bot.send_message(user, text, reply_markup=markup)
+    else:
+
+        text = Messages(user)['phone_only_digits']
+        markup = None
+        await bot.send_message(user, text, reply_markup=markup)
+
+    return
 
 
 @dp.callback_query_handler(state=states.User.Edit)
@@ -741,6 +810,102 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
     await bot.answer_callback_query(callback_query.id)
 
     return
+
+
+@dp.message_handler(state=states.User.Delivery)
+async def user_ammount_handler(message: types.Message, state: FSMContext):
+
+    user = int(message.from_user.id)
+    recieved_text = message.text
+    language = Client.get_user_language(user)
+
+    try:
+        button_code = Client.get_buttons(language, 9).get(
+            title=recieved_text
+            ).button_code
+
+    except Exception as e:
+        return
+
+    if "back" in button_code:
+
+        data = GenerateCart(user)
+        text = data[0]
+
+        await states.User.Cart.set()
+
+        markup = keyboards.CartKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+
+    if button_code == 'self_delivery':
+
+        async with state.proxy() as data:
+
+            data['delivery'] = False
+
+        text = Messages(user)['time_set_self']
+
+        await states.User.Time.set()
+
+        markup = keyboards.TimeKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+
+    if button_code == 'delivery':
+
+        async with state.proxy() as data:
+
+            data['delivery'] = True
+
+        text = Messages(user)['location']
+
+        await states.User.Location.set()
+
+        markup = keyboards.LocationKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+        
+        
+@dp.callback_query_handler(state=states.User.Time)
+async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
+    user = int(callback_query.from_user.id)
+    data = callback_query.data
+
+    await bot.answer_callback_query(callback_query.id)
+
+    if "back" in data:
+
+        text = Messages(user)['delivery']
+        await states.User.Delivery.set()
+
+        markup = keyboards.DeliveryKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+        
+        return
+    
+    if 'close_time' in data:
+        
+        pass
+    
+    if 'set_time' in data:
+        
+        pass
+
+
+@dp.message_handler(state=states.User.Location, content_types=types.ContentType.LOCATION)
+async def location_edit_handler(message: types.Message, state: FSMContext):   
+
+    user = message.from_user.id
+
+    async with state.proxy() as data:
+
+        data['location_x'] = message.location.latitude
+        data['location_y'] = message.location.longitude
+
+    await states.User.Time.set()
+
+    text = Messages(user)["time_set_delivery"]
+    markup = keyboards.TimeKeyboard(user)
+
+    await bot.send_message(user, text, reply_markup=markup)
 
 
 async def shutdown(dispatcher: Dispatcher):

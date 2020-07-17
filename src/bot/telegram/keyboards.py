@@ -189,6 +189,35 @@ def QuantityKeyboard(user, current):
     return keyboard
 
 
+def EditQuantityKeyboard(user, current):
+
+    language = Client.get_user_language(user)
+
+    buttons = Client.get_buttons(language, 4)
+    delete_button = Client.get_buttons(language, 14).first()
+    
+    end_buttons = []
+
+    end_buttons.append(InlineKeyboardButton(buttons[0].title, callback_data=f'minus'))
+    end_buttons.append(InlineKeyboardButton(buttons[1].title.replace('{quantity}', str(current)), callback_data=f'empty'))
+    end_buttons.append(InlineKeyboardButton(buttons[2].title, callback_data=f'plus'))
+
+    end_buttons = BuildMenu(
+        end_buttons,
+        3,
+        footer_buttons=[
+            InlineKeyboardButton(buttons[3].title, callback_data=f'accept'),
+            InlineKeyboardButton(delete_button.title, callback_data=f'remove'),
+            InlineKeyboardButton(buttons[4].title, callback_data=f'back'),
+        ]
+        )
+
+    keyboard = InlineKeyboardMarkup()
+    keyboard.inline_keyboard = end_buttons
+
+    return keyboard
+
+
 def CartKeyboard(user):
 
     language = Client.get_user_language(user)
@@ -315,3 +344,43 @@ def TimeKeyboard(user):
     keyboard.inline_keyboard = end_buttons
 
     return keyboard
+
+
+def PaymentTypeKeyboard(user):
+
+    language = Client.get_user_language(user)
+
+    buttons = Client.get_buttons(language, 12)
+    end_buttons = []
+
+    for button in buttons:
+
+        end_buttons.append(KeyboardButton(button.title))
+
+    end_buttons = BuildMenu(
+        end_buttons[:-1],
+        2,
+        footer_buttons=[end_buttons[-1]],
+        )
+
+    return ReplyKeyboardMarkup(end_buttons, resize_keyboard=True, one_time_keyboard=True)
+
+
+def OrderAcceptKeyboard(user):
+
+    language = Client.get_user_language(user)
+
+    buttons = Client.get_buttons(language, 13)
+    end_buttons = []
+
+    for button in buttons:
+
+        end_buttons.append(KeyboardButton(button.title))
+
+    end_buttons = BuildMenu(
+        end_buttons[:-1],
+        2,
+        footer_buttons=[end_buttons[-1]],
+        )
+
+    return ReplyKeyboardMarkup(end_buttons, resize_keyboard=True, one_time_keyboard=True)

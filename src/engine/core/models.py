@@ -655,6 +655,13 @@ class CartBase(models.Model):
         null=False,
         blank=False
         )
+    
+    canceled = models.BooleanField(
+        'Canceled',
+        default=False,
+        null=False,
+        blank=False
+        )
 
     created_at = models.DateTimeField(
         'Created at',

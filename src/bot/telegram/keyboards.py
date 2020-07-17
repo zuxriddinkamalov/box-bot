@@ -1,4 +1,5 @@
 from client import Client as client
+import client as Client_module
 
 from aiogram.types import ReplyKeyboardRemove, \
     ReplyKeyboardMarkup, KeyboardButton, \
@@ -31,7 +32,7 @@ def BuildMenu(buttons,
 
 def LanguageKeyboard(user):
 
-    buttons = Client.core_models.Language.objects.all().order_by('order')
+    buttons = Client_module.core_models.Language.objects.all().order_by('order')
     end_buttons = []
 
     for button in buttons:
@@ -195,16 +196,119 @@ def CartKeyboard(user):
     buttons = Client.get_buttons(language, 5)
     end_buttons = []
 
-    end_buttons.append(InlineKeyboardButton(buttons[0].title, callback_data=f'edit'))
-    end_buttons.append(InlineKeyboardButton(buttons[1].title, callback_data=f'order'))
-    end_buttons.append(InlineKeyboardButton(buttons[2].title, callback_data=f'clear'))
+    for button in buttons:
+
+        end_buttons.append(KeyboardButton(button.title))
+
+    end_buttons = BuildMenu(
+        end_buttons[:-1],
+        2,
+        footer_buttons=[end_buttons[-1]],
+        )
+
+    return ReplyKeyboardMarkup(end_buttons, resize_keyboard=True, one_time_keyboard=True)
+
+
+def CartEditKeyboard(user):
+
+    language = Client.get_user_language(user)
+
+    button = Client.get_buttons(language, 6).first()
+    end_buttons = []
+
+    positions = Client.get_cart(user).positions.all()
+
+    for position in positions:
+
+        end_buttons.append(InlineKeyboardButton(f'{position.count} x {position.product.title}', callback_data=f'position {position.id}'))
 
     end_buttons = BuildMenu(
         end_buttons,
-        2,
+        1,
         footer_buttons=[
-            InlineKeyboardButton(buttons[3].title, callback_data=f'back')
-        ]
+            InlineKeyboardButton(button.title, callback_data=f'back')]
+        )
+
+    keyboard = InlineKeyboardMarkup()
+    keyboard.inline_keyboard = end_buttons
+
+    return keyboard
+
+
+def CancelButton(user, counter):
+
+    language = Client.get_user_language(user)
+
+    button = Client.get_buttons(language, 7).first()
+    end_buttons = []
+
+    end_buttons.append(InlineKeyboardButton(button.title.replace('( {counter} )', f'( {counter} )' if counter != 0 else ""), callback_data=f'cancel'))
+
+    end_buttons = BuildMenu(
+        end_buttons,
+        1
+        )
+
+    keyboard = InlineKeyboardMarkup()
+    keyboard.inline_keyboard = end_buttons
+
+    return keyboard
+
+
+def ContactKeyboard(user):
+
+    language = Client.get_user_language(user)
+
+    buttons = Client.get_buttons(language, 8)
+
+    return ReplyKeyboardMarkup([[KeyboardButton(buttons[0].title, request_contact=True)], [KeyboardButton(buttons[1].title)]], resize_keyboard=True, one_time_keyboard=True)
+
+
+def DeliveryKeyboard(user):
+
+    language = Client.get_user_language(user)
+
+    buttons = Client.get_buttons(language, 9)
+    end_buttons = []
+
+    for button in buttons:
+
+        end_buttons.append(KeyboardButton(button.title))
+
+    end_buttons = BuildMenu(
+        end_buttons[:-1],
+        2,
+        footer_buttons=[end_buttons[-1]],
+        )
+
+    return ReplyKeyboardMarkup(end_buttons, resize_keyboard=True, one_time_keyboard=True)
+
+
+def LocationKeyboard(user):
+
+    language = Client.get_user_language(user)
+
+    buttons = Client.get_buttons(language, 10)
+
+    return ReplyKeyboardMarkup([[KeyboardButton(buttons[0].title, request_location=True)], [KeyboardButton(buttons[1].title)]], resize_keyboard=True, one_time_keyboard=True)
+
+
+def TimeKeyboard(user):
+
+    language = Client.get_user_language(user)
+
+    buttons = Client.get_buttons(language, 11)
+    end_buttons = []
+
+    for button in buttons:
+        end_buttons.append(
+            InlineKeyboardButton(button.title, callback_data=f'{button.button_code}')
+            )
+
+    end_buttons = BuildMenu(
+        end_buttons[:-1],
+        1,
+        footer_buttons=[end_buttons[-1]],
         )
 
     keyboard = InlineKeyboardMarkup()

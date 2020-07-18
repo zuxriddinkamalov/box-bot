@@ -84,13 +84,15 @@ async def process_start_command(message: types.Message, state: FSMContext):
 
 # /state command handler
 @dp.message_handler(commands=['state'], state='*')
-async def get_MyState(message: types.Message):
+async def get_MyState(message: types.Message, state: FSMContext):
 
     user = message.from_user.id
 
-    state = await dp.current_state(user=message.from_user.id).get_state()
+    current = await dp.current_state(user=message.from_user.id).get_state()
+    
+    async with state.proxy() as data:
 
-    await bot.send_message(user, state)
+        await bot.send_message(user, f'{current}\n{data}')
 
 
 @dp.message_handler(state=states.User.ChooseLanguage)
@@ -939,14 +941,29 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
     data = callback_query.data
 
     await bot.answer_callback_query(callback_query.id)
+    await bot.delete_message(user, callback_query.message.message_id)
 
     if "back" in data:
+        
+        async with state.proxy() as data:
 
-        text = Messages(user)['delivery']
-        await states.User.Delivery.set()
+            delivery = data['delivery']
+            
+        if not delivery:
 
-        markup = keyboards.DeliveryKeyboard(user)
-        await bot.send_message(user, text, reply_markup=markup)
+            text = Messages(user)['delivery']
+            await states.User.Delivery.set()
+
+            markup = keyboards.DeliveryKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
+        else:
+            
+            text = Messages(user)['location']
+
+            await states.User.Location.set()
+
+            markup = keyboards.LocationKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
 
         return
 
@@ -967,14 +984,14 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
             markup = keyboards.PaymentTypeKeyboard(user)
             await bot.send_message(user, text, reply_markup=markup)
 
-    else:
+        else:
 
-        await states.User.OrderAccept.set()
+            await states.User.OrderAccept.set()
 
-        text = GenerateOrder(user)
+            text = GenerateOrder(user)
 
-        markup = keyboards.OrderAcceptKeyboard(user)
-        await bot.send_message(user, text, reply_markup=markup)
+            markup = keyboards.OrderAcceptKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
 
     if 'set_time' in data:
 
@@ -982,8 +999,34 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
 
         await states.User.TimeSet.set()
 
-        markup = None
+        markup = keyboards.BackKeyboard(user)
         await bot.send_message(user, text, reply_markup=markup)
+        
+        
+@dp.message_handler(state=states.User.Location)
+async def user_ammount_handler(message: types.Message, state: FSMContext):
+
+    user = message.from_user.id
+    recieved_text = message.text
+    language = Client.get_user_language(user)
+
+    try:
+        button_code = Client.get_buttons(language, 10).get(
+            title=recieved_text
+            ).button_code
+
+    except Exception as e:
+        return
+
+    if "back" in button_code:
+
+        text = Messages(user)['delivery']
+        await states.User.Delivery.set()
+
+        markup = keyboards.DeliveryKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+
+        return
 
 
 @dp.message_handler(state=states.User.TimeSet)
@@ -991,6 +1034,44 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
 
     user = message.from_user.id
     recieved_text = message.text
+    button_code = ''
+    language = Client.get_user_language(user)
+    
+    try:
+        button_code = Client.get_buttons(language, 15).get(
+            title=recieved_text
+            ).button_code
+
+    except Exception as e:
+        print(e)
+
+    if "back" in button_code:
+        
+        async with state.proxy() as data:
+
+            delivery = data['delivery']
+            
+        if not delivery:
+            
+            text = Messages(user)['time_set_self']
+
+            await states.User.Time.set()
+
+            markup = keyboards.TimeKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
+            
+        else:
+            
+            await states.User.Time.set()
+
+            text = Messages(user)["time_set_delivery"]
+            markup = keyboards.TimeKeyboard(user)
+
+            await bot.send_message(user, text, reply_markup=markup)
+            
+            
+        return
+
 
     async with state.proxy() as data:
 
@@ -1042,6 +1123,117 @@ async def location_edit_handler(message: types.Message, state: FSMContext):
     await bot.send_message(user, text, reply_markup=markup)
 
 
+@dp.message_handler(state=states.User.PaymentType)
+async def user_ammount_handler(message: types.Message, state: FSMContext):
+
+    user = int(message.from_user.id)
+    recieved_text = message.text
+    language = Client.get_user_language(user)
+
+    try:
+        button_code = Client.get_buttons(language, 12).get(
+            title=recieved_text
+            ).button_code
+
+    except Exception as e:
+        return
+
+    if "back" in button_code:
+
+        async with state.proxy() as data:
+
+            time = data['time']
+            delivery = data['delivery']
+            
+        if time:
+            
+            text = Messages(user)['set_time']
+
+            await states.User.TimeSet.set()
+
+            markup = keyboards.BackKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
+        
+        else:
+            
+            if not delivery:
+
+                text = Messages(user)['time_set_self']
+
+                await states.User.Time.set()
+
+                markup = keyboards.TimeKeyboard(user)
+                await bot.send_message(user, text, reply_markup=markup)
+                
+            else:
+                
+                await states.User.Time.set()
+
+                text = Messages(user)["time_set_delivery"]
+                markup = keyboards.TimeKeyboard(user)
+
+                await bot.send_message(user, text, reply_markup=markup)
+        return
+
+    if 'card' in button_code:
+        
+        async with state.proxy() as data:
+
+            data['card'] = True
+            
+        text = Messages(user)['paysystem_choose']
+
+        await states.User.PaySystemChoose.set()
+
+        markup = keyboards.PaySystemKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+
+    if 'cash' in button_code:
+
+        async with state.proxy() as data:
+
+            data['card'] = False
+            
+        text = Messages(user)['paysystem_choose']
+
+        await states.User.PaySystemChoose.set()
+
+        markup = keyboards.PaySystemKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+        
+        
+@dp.callback_query_handler(state=states.User.PaySystemChoose)
+async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
+    user = int(callback_query.from_user.id)
+    data = callback_query.data
+
+    await bot.answer_callback_query(callback_query.id)
+    await bot.delete_message(user, callback_query.message.message_id)
+    
+
+    if "back" in data:
+
+        await states.User.PaymentType.set()
+
+        text = Messages(user)['payment_type']
+
+        markup = keyboards.PaymentTypeKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+
+        return
+    paysystem = data
+    async with state.proxy() as data:
+
+        data['paysystem'] = paysystem
+        
+    await states.User.OrderAccept.set()
+
+    text = GenerateOrder(user)
+
+    markup = keyboards.OrderAcceptKeyboard(user)
+    await bot.send_message(user, text, reply_markup=markup)
+
+
 @dp.message_handler(state=states.User.OrderAccept)
 async def user_ammount_handler(message: types.Message, state: FSMContext):
 
@@ -1064,23 +1256,48 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
             time = data['time']
             delivery = data['delivery']
             
+        ps = Client.get_paysystems()
+
+        if ps.count() != 0:
+            
+            text = Messages(user)['paysystem_choose']
+
+            await states.User.PaySystemChoose.set()
+
+            markup = keyboards.PaySystemKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
+            
+            return
+            
         if time:
             
             text = Messages(user)['set_time']
 
             await states.User.TimeSet.set()
 
-            markup = None
+            markup = keyboards.BackKeyboard(user)
             await bot.send_message(user, text, reply_markup=markup)
         
         else:
             
-            # if not delivery:
-                
-            await states.User.Time.set()
+            if not delivery:
 
-            markup = keyboards.TimeKeyboard(user)
-            await bot.send_message(user, text, reply_markup=markup)
+                text = Messages(user)['time_set_self']
+
+                await states.User.Time.set()
+
+                markup = keyboards.TimeKeyboard(user)
+                await bot.send_message(user, text, reply_markup=markup)
+                
+            else:
+                
+                await states.User.Time.set()
+
+                text = Messages(user)["time_set_delivery"]
+                markup = keyboards.TimeKeyboard(user)
+
+                await bot.send_message(user, text, reply_markup=markup)
+                
 
     if 'accept' in button_code:
         
@@ -1099,7 +1316,7 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
     
     if 'edit' in button_code:
         
-        # TODO cool logic with order acceptance
+        # TODO cool logic with order edit
         
         text = Messages(user)['order_accepted']
 

@@ -384,3 +384,46 @@ def OrderAcceptKeyboard(user):
         )
 
     return ReplyKeyboardMarkup(end_buttons, resize_keyboard=True, one_time_keyboard=True)
+
+
+def BackKeyboard(user):
+    
+    language = Client.get_user_language(user)
+
+    button = Client.get_buttons(language, 15).first()
+    end_buttons = []
+
+    end_buttons.append(KeyboardButton(button.title))
+
+    end_buttons = BuildMenu(
+        end_buttons,
+        1,
+        )
+
+    return ReplyKeyboardMarkup(end_buttons, resize_keyboard=True, one_time_keyboard=True)
+
+
+def PaySystemKeyboard(user):
+
+    language = Client.get_user_language(user)
+
+    back_button = Client.get_buttons(language, 15).first()
+    ps = Client.get_paysystems()
+
+    end_buttons = []
+
+    for button in ps:
+        end_buttons.append(
+            InlineKeyboardButton(button.title, callback_data=f'{button.id}')
+            )
+
+    end_buttons = BuildMenu(
+        end_buttons,
+        2,
+        footer_buttons=[InlineKeyboardButton(back_button.title, callback_data=f'back')],
+        )
+
+    keyboard = InlineKeyboardMarkup()
+    keyboard.inline_keyboard = end_buttons
+
+    return keyboard

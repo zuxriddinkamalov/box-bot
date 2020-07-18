@@ -19,3 +19,5 @@ class User(StatesGroup):
     Time = State()
     TimeSet = State()
     OrderAccept = State()
+    PaymentType = State()
+    PaySystemChoose = State()

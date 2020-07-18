@@ -14,6 +14,13 @@ class PaySystem(models.Model):
         null=False,
         blank=False
         )
+    
+    token = models.CharField(
+        'Token',
+        max_length=1024,
+        null=False,
+        blank=False
+        )
 
     active = models.BooleanField(
         'Active',

@@ -37,6 +37,7 @@ def Messages(user: int):
         'payment_type': Client.get_message(26, language),
         'order_accepted': Client.get_message(27, language),
         'product_removed': Client.get_message(28, language),
+        'paysystem_choose': Client.get_message(29, language),
         # 'information': Client.getMessage(4, language),
         # 'before_real_name': Client.getMessage(5, language),
         # 'getRealName': Client.getMessage(6, language),
@@ -139,4 +140,4 @@ def GenerateCart(user: int):
 
 def GenerateOrder(user):
     # TODO cool logic for Order Generate
-    pass
+    return 'lol'

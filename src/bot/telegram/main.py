@@ -1301,33 +1301,39 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
 
     if 'accept' in button_code:
         
-        # TODO cool logic with order acceptance
         
-        text = Messages(user)['order_accepted']
+        async with state.proxy() as data:
 
-        markup = None
-        await bot.send_message(user, text, reply_markup=markup)
+            card = data['card']
+        
+        if not card:
+            
+            text = Messages(user)['order_accepted']
+            
+            Client.create_order(user)
+            # TODO cool logic with order acceptance & channel notification
+            # TODO make django model signal to send notification to Telegram Channel
 
-        await states.User.MainMenu.set()
+            markup = None
+            await bot.send_message(user, text, reply_markup=markup)
 
-        text = Messages(user)['main_menu']
-        markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
-        await bot.send_message(user, text, reply_markup=markup)
+            await states.User.MainMenu.set()
+
+            text = Messages(user)['main_menu']
+            markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
+            await bot.send_message(user, text, reply_markup=markup)
+            
+        else:
+            
+            text = Messages(user)['order_accepted']
+            
+            
     
     if 'edit' in button_code:
         
         # TODO cool logic with order edit
         
-        text = Messages(user)['order_accepted']
-
-        markup = None
-        await bot.send_message(user, text, reply_markup=markup)
-
-        await states.User.MainMenu.set()
-
-        text = Messages(user)['main_menu']
-        markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
-        await bot.send_message(user, text, reply_markup=markup)
+        pass
 
 
 

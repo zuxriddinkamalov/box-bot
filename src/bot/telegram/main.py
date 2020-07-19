@@ -19,7 +19,7 @@ from aiogram.types import ReplyKeyboardRemove
 
 # bot import
 import client as ClientModule
-from messages import Messages, GenerateCart
+from messages import Messages, GenerateCart, GenerateOrder
 import keyboards
 import states
 
@@ -84,13 +84,15 @@ async def process_start_command(message: types.Message, state: FSMContext):
 
 # /state command handler
 @dp.message_handler(commands=['state'], state='*')
-async def get_MyState(message: types.Message):
+async def get_MyState(message: types.Message, state: FSMContext):
 
     user = message.from_user.id
 
-    state = await dp.current_state(user=message.from_user.id).get_state()
+    current = await dp.current_state(user=message.from_user.id).get_state()
+    
+    async with state.proxy() as data:
 
-    await bot.send_message(user, state)
+        await bot.send_message(user, f'{current}\n{data}')
 
 
 @dp.message_handler(state=states.User.ChooseLanguage)
@@ -392,7 +394,9 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
         quantity -= 1
 
         if quantity == 0:
+            await bot.answer_callback_query(callback_query.id)
             return
+
 
         async with state.proxy() as data:
             data['quantity'] = quantity
@@ -698,7 +702,7 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
         photo = Client.get_photo(current_product)
         # markup = None
         text = Messages(user)['quantity']
-        markup = keyboards.QuantityKeyboard(user, position.count)
+        markup = keyboards.EditQuantityKeyboard(user, position.count)
 
         msg = await bot.send_photo(user, photo[0], caption=text, reply_markup=markup)
 
@@ -758,18 +762,50 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
         quantity -= 1
 
         if quantity == 0:
-            return
+            
+            # "Catalog button handler"
+            async with state.proxy() as data:
 
-        async with state.proxy() as data:
-            data['quantity'] = quantity
+                position = int(data['position'])
 
-        await states.User.EditQuantity.set()
+            position = ClientModule.core_models.Position.objects.get(pk=position)
+            position.delete()
 
-        text = Messages(user)['quantity']
-        markup = keyboards.QuantityKeyboard(user, quantity)
-        await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
-        # await bot.edit_message_caption(user, callback_query.message.message_id, caption=text, reply_markup=markup)
-        # await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
+            text = Messages(user)['product_removed']
+
+            await bot.answer_callback_query(callback_query.id, text)
+
+            await bot.delete_message(user, callback_query.message.message_id)
+
+            if not Client.get_cart_count(user):
+
+                Client.cancel_cart(user)
+                Client.clear_cart(user)
+
+                await states.User.MainMenu.set()
+
+                text = Messages(user)['main_menu']
+                markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
+                await bot.send_message(user, text, reply_markup=markup)
+
+            else:
+
+                await states.User.Edit.set()
+
+                text = Messages(user)['edit_menu']
+                markup = keyboards.CartEditKeyboard(user)
+                await bot.send_message(user, text, reply_markup=markup)
+
+                async with state.proxy() as data:
+                    data['quantity'] = quantity
+
+                await states.User.EditQuantity.set()
+
+                text = Messages(user)['quantity']
+                markup = keyboards.EditQuantityKeyboard(user, quantity)
+                await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
+                # await bot.edit_message_caption(user, callback_query.message.message_id, caption=text, reply_markup=markup)
+                # await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
 
     if "plus" in data:
 
@@ -782,7 +818,7 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
         await states.User.EditQuantity.set()
 
         text = Messages(user)['quantity']
-        markup = keyboards.QuantityKeyboard(user, quantity)
+        markup = keyboards.EditQuantityKeyboard(user, quantity)
         await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
         # await bot.edit_message_caption(user, callback_query.message.message_id, caption=text, reply_markup=markup)
         # await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
@@ -806,6 +842,41 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
         text = Messages(user)['edit_menu']
         markup = keyboards.CartEditKeyboard(user)
         await bot.send_message(user, text, reply_markup=markup)
+
+    if "remove" in data:
+
+        # "Catalog button handler"
+        async with state.proxy() as data:
+
+            position = int(data['position'])
+
+        position = ClientModule.core_models.Position.objects.get(pk=position)
+        position.delete()
+
+        text = Messages(user)['product_removed']
+
+        await bot.answer_callback_query(callback_query.id, text)
+
+        await bot.delete_message(user, callback_query.message.message_id)
+
+        if not Client.get_cart_count(user):
+            
+            Client.cancel_cart(user)
+            Client.clear_cart(user)
+
+            await states.User.MainMenu.set()
+
+            text = Messages(user)['main_menu']
+            markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
+            await bot.send_message(user, text, reply_markup=markup)
+
+        else:
+
+            await states.User.Edit.set()
+
+            text = Messages(user)['edit_menu']
+            markup = keyboards.CartEditKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
 
     await bot.answer_callback_query(callback_query.id)
 
@@ -862,32 +933,176 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
 
         markup = keyboards.LocationKeyboard(user)
         await bot.send_message(user, text, reply_markup=markup)
-        
-        
+
+
 @dp.callback_query_handler(state=states.User.Time)
 async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
     user = int(callback_query.from_user.id)
     data = callback_query.data
 
     await bot.answer_callback_query(callback_query.id)
+    await bot.delete_message(user, callback_query.message.message_id)
 
     if "back" in data:
+        
+        async with state.proxy() as data:
+
+            delivery = data['delivery']
+            
+        if not delivery:
+
+            text = Messages(user)['delivery']
+            await states.User.Delivery.set()
+
+            markup = keyboards.DeliveryKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
+        else:
+            
+            text = Messages(user)['location']
+
+            await states.User.Location.set()
+
+            markup = keyboards.LocationKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
+
+        return
+
+    if 'close_time' in data:
+
+        async with state.proxy() as data:
+
+            data['time'] = False
+
+        ps = Client.get_paysystems()
+
+        if ps.count() != 0:
+
+            await states.User.PaymentType.set()
+
+            text = Messages(user)['payment_type']
+
+            markup = keyboards.PaymentTypeKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
+
+        else:
+
+            await states.User.OrderAccept.set()
+
+            text = GenerateOrder(user)
+
+            markup = keyboards.OrderAcceptKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
+
+    if 'set_time' in data:
+
+        text = Messages(user)['set_time']
+
+        await states.User.TimeSet.set()
+
+        markup = keyboards.BackKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+        
+        
+@dp.message_handler(state=states.User.Location)
+async def user_ammount_handler(message: types.Message, state: FSMContext):
+
+    user = message.from_user.id
+    recieved_text = message.text
+    language = Client.get_user_language(user)
+
+    try:
+        button_code = Client.get_buttons(language, 10).get(
+            title=recieved_text
+            ).button_code
+
+    except Exception as e:
+        return
+
+    if "back" in button_code:
 
         text = Messages(user)['delivery']
         await states.User.Delivery.set()
 
         markup = keyboards.DeliveryKeyboard(user)
         await bot.send_message(user, text, reply_markup=markup)
-        
+
         return
+
+
+@dp.message_handler(state=states.User.TimeSet)
+async def user_ammount_handler(message: types.Message, state: FSMContext):
+
+    user = message.from_user.id
+    recieved_text = message.text
+    button_code = ''
+    language = Client.get_user_language(user)
     
-    if 'close_time' in data:
+    try:
+        button_code = Client.get_buttons(language, 15).get(
+            title=recieved_text
+            ).button_code
+
+    except Exception as e:
+        print(e)
+
+    if "back" in button_code:
         
-        pass
-    
-    if 'set_time' in data:
-        
-        pass
+        async with state.proxy() as data:
+
+            delivery = data['delivery']
+            
+        if not delivery:
+            
+            text = Messages(user)['time_set_self']
+
+            await states.User.Time.set()
+
+            markup = keyboards.TimeKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
+            
+        else:
+            
+            await states.User.Time.set()
+
+            text = Messages(user)["time_set_delivery"]
+            markup = keyboards.TimeKeyboard(user)
+
+            await bot.send_message(user, text, reply_markup=markup)
+            
+            
+        return
+
+
+    async with state.proxy() as data:
+
+        data['time'] = recieved_text
+
+    text = Messages(user)['time_set_success']
+
+    markup = None
+    await bot.send_message(user, text, reply_markup=markup)
+
+    ps = Client.get_paysystems()
+
+    if ps.count() != 0:
+
+        await states.User.PaymentType.set()
+
+        text = Messages(user)['payment_type']
+
+        markup = keyboards.PaymentTypeKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+
+    else:
+
+        await states.User.OrderAccept.set()
+
+        text = GenerateOrder(user)
+
+        markup = keyboards.OrderAcceptKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+
+    return
 
 
 @dp.message_handler(state=states.User.Location, content_types=types.ContentType.LOCATION)
@@ -906,6 +1121,240 @@ async def location_edit_handler(message: types.Message, state: FSMContext):
     markup = keyboards.TimeKeyboard(user)
 
     await bot.send_message(user, text, reply_markup=markup)
+
+
+@dp.message_handler(state=states.User.PaymentType)
+async def user_ammount_handler(message: types.Message, state: FSMContext):
+
+    user = int(message.from_user.id)
+    recieved_text = message.text
+    language = Client.get_user_language(user)
+
+    try:
+        button_code = Client.get_buttons(language, 12).get(
+            title=recieved_text
+            ).button_code
+
+    except Exception as e:
+        return
+
+    if "back" in button_code:
+
+        async with state.proxy() as data:
+
+            time = data['time']
+            delivery = data['delivery']
+            
+        if time:
+            
+            text = Messages(user)['set_time']
+
+            await states.User.TimeSet.set()
+
+            markup = keyboards.BackKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
+        
+        else:
+            
+            if not delivery:
+
+                text = Messages(user)['time_set_self']
+
+                await states.User.Time.set()
+
+                markup = keyboards.TimeKeyboard(user)
+                await bot.send_message(user, text, reply_markup=markup)
+                
+            else:
+                
+                await states.User.Time.set()
+
+                text = Messages(user)["time_set_delivery"]
+                markup = keyboards.TimeKeyboard(user)
+
+                await bot.send_message(user, text, reply_markup=markup)
+        return
+
+    if 'card' in button_code:
+        
+        async with state.proxy() as data:
+
+            data['card'] = True
+            
+        text = Messages(user)['paysystem_choose']
+
+        await states.User.PaySystemChoose.set()
+
+        markup = keyboards.PaySystemKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+
+    if 'cash' in button_code:
+        
+
+        async with state.proxy() as data:
+
+            data['card'] = False
+            data['paysystem'] = None
+            text = GenerateOrder(user, data)
+            
+        await states.User.OrderAccept.set()
+
+        markup = keyboards.OrderAcceptKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+        
+        
+@dp.callback_query_handler(state=states.User.PaySystemChoose)
+async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
+    user = int(callback_query.from_user.id)
+    data = callback_query.data
+
+    await bot.answer_callback_query(callback_query.id)
+    await bot.delete_message(user, callback_query.message.message_id)
+    
+
+    if "back" in data:
+
+        await states.User.PaymentType.set()
+
+        text = Messages(user)['payment_type']
+
+        markup = keyboards.PaymentTypeKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+
+        return
+    
+    paysystem = data
+    async with state.proxy() as data:
+
+        data['paysystem'] = paysystem
+        
+    await states.User.OrderAccept.set()
+
+    text = GenerateOrder(user)
+
+    markup = keyboards.OrderAcceptKeyboard(user)
+    await bot.send_message(user, text, reply_markup=markup)
+
+
+@dp.message_handler(state=states.User.OrderAccept)
+async def user_ammount_handler(message: types.Message, state: FSMContext):
+
+    user = int(message.from_user.id)
+    recieved_text = message.text
+    language = Client.get_user_language(user)
+    
+    try:
+        button_code = Client.get_buttons(language, 13).get(
+            title=recieved_text
+            ).button_code
+
+    except Exception as e:
+        return
+
+    if "back" in button_code:
+
+        async with state.proxy() as data:
+
+            time = data['time']
+            delivery = data['delivery']
+            card = data['card']
+            
+        ps = Client.get_paysystems()
+
+        if ps.count() != 0:
+            
+            if card:
+            
+                text = Messages(user)['paysystem_choose']
+
+                await states.User.PaySystemChoose.set()
+
+                markup = keyboards.PaySystemKeyboard(user)
+                await bot.send_message(user, text, reply_markup=markup)
+                
+                return
+
+            else:
+                
+                await states.User.PaymentType.set()
+
+                text = Messages(user)['payment_type']
+
+                markup = keyboards.PaymentTypeKeyboard(user)
+                await bot.send_message(user, text, reply_markup=markup)
+                
+                return
+            
+        if time:
+            
+            text = Messages(user)['set_time']
+
+            await states.User.TimeSet.set()
+
+            markup = keyboards.BackKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
+            
+            return
+        
+        else:
+            
+            if not delivery:
+
+                text = Messages(user)['time_set_self']
+
+                await states.User.Time.set()
+
+                markup = keyboards.TimeKeyboard(user)
+                await bot.send_message(user, text, reply_markup=markup)
+                
+                return
+                
+            else:
+                
+                await states.User.Time.set()
+
+                text = Messages(user)["time_set_delivery"]
+                markup = keyboards.TimeKeyboard(user)
+
+                await bot.send_message(user, text, reply_markup=markup)
+                
+                return
+
+    if 'accept' in button_code:
+        
+        
+        async with state.proxy() as data:
+
+            card = data['card']
+        
+        if not card:
+            
+            text = Messages(user)['order_accepted']
+            
+            Client.create_order(user)
+            # TODO cool logic with order acceptance & channel notification
+            # TODO make django model signal to send notification to Telegram Channel
+
+            markup = None
+            await bot.send_message(user, text, reply_markup=markup)
+
+            await states.User.MainMenu.set()
+
+            text = Messages(user)['main_menu']
+            markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
+            await bot.send_message(user, text, reply_markup=markup)
+            
+        else:
+            
+            text = Messages(user)['order_accepted']
+    
+    if 'edit' in button_code:
+        
+        # TODO cool logic with order edit
+        
+        pass
+
+
 
 
 async def shutdown(dispatcher: Dispatcher):

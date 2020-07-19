@@ -341,6 +341,13 @@ class Client():
             return [photo.file_id, True, photo.id]
 
     @classmethod
+    def get_paysystems(self):
+
+        return telegram_models.PaySystem.objects.filter(
+            active=True
+            ).order_by('order')
+
+    @classmethod
     def update_photo(self, photo_id: int, file_id: str):
 
         photo = core_models.Photo.objects.get(pk=photo_id)

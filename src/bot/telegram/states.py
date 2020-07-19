@@ -17,3 +17,7 @@ class User(StatesGroup):
     Delivery = State()
     Location = State()
     Time = State()
+    TimeSet = State()
+    OrderAccept = State()
+    PaymentType = State()
+    PaySystemChoose = State()

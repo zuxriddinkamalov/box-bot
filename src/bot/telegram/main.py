@@ -1189,16 +1189,17 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
         await bot.send_message(user, text, reply_markup=markup)
 
     if 'cash' in button_code:
+        
 
         async with state.proxy() as data:
 
             data['card'] = False
+            data['paysystem'] = None
+            text = GenerateOrder(user, data)
             
-        text = Messages(user)['paysystem_choose']
+        await states.User.OrderAccept.set()
 
-        await states.User.PaySystemChoose.set()
-
-        markup = keyboards.PaySystemKeyboard(user)
+        markup = keyboards.OrderAcceptKeyboard(user)
         await bot.send_message(user, text, reply_markup=markup)
         
         
@@ -1221,6 +1222,7 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
         await bot.send_message(user, text, reply_markup=markup)
 
         return
+    
     paysystem = data
     async with state.proxy() as data:
 
@@ -1240,7 +1242,7 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
     user = int(message.from_user.id)
     recieved_text = message.text
     language = Client.get_user_language(user)
-
+    
     try:
         button_code = Client.get_buttons(language, 13).get(
             title=recieved_text
@@ -1255,19 +1257,33 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
 
             time = data['time']
             delivery = data['delivery']
+            card = data['card']
             
         ps = Client.get_paysystems()
 
         if ps.count() != 0:
             
-            text = Messages(user)['paysystem_choose']
-
-            await states.User.PaySystemChoose.set()
-
-            markup = keyboards.PaySystemKeyboard(user)
-            await bot.send_message(user, text, reply_markup=markup)
+            if card:
             
-            return
+                text = Messages(user)['paysystem_choose']
+
+                await states.User.PaySystemChoose.set()
+
+                markup = keyboards.PaySystemKeyboard(user)
+                await bot.send_message(user, text, reply_markup=markup)
+                
+                return
+
+            else:
+                
+                await states.User.PaymentType.set()
+
+                text = Messages(user)['payment_type']
+
+                markup = keyboards.PaymentTypeKeyboard(user)
+                await bot.send_message(user, text, reply_markup=markup)
+                
+                return
             
         if time:
             
@@ -1277,6 +1293,8 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
 
             markup = keyboards.BackKeyboard(user)
             await bot.send_message(user, text, reply_markup=markup)
+            
+            return
         
         else:
             
@@ -1289,6 +1307,8 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
                 markup = keyboards.TimeKeyboard(user)
                 await bot.send_message(user, text, reply_markup=markup)
                 
+                return
+                
             else:
                 
                 await states.User.Time.set()
@@ -1298,6 +1318,7 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
 
                 await bot.send_message(user, text, reply_markup=markup)
                 
+                return
 
     if 'accept' in button_code:
         
@@ -1326,8 +1347,6 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
         else:
             
             text = Messages(user)['order_accepted']
-            
-            
     
     if 'edit' in button_code:
         

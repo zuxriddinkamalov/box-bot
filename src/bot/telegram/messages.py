@@ -1,4 +1,5 @@
 from client import core_models
+from client import telegram_models
 from client import Client as client
 
 Client = client()
@@ -38,42 +39,11 @@ def Messages(user: int):
         'order_accepted': Client.get_message(27, language),
         'product_removed': Client.get_message(28, language),
         'paysystem_choose': Client.get_message(29, language),
-        # 'information': Client.getMessage(4, language),
-        # 'before_real_name': Client.getMessage(5, language),
-        # 'getRealName': Client.getMessage(6, language),
-        # 'getPhone': Client.getMessage(7, language),
-        # 'accept_data': Client.getMessage(8, language),
-        # 'account_menu': Client.getMessage(9, language),
-        # 'noNews': Client.getMessage(10, language),
-        # 'noEvents': Client.getMessage(11, language),
-        # 'user_info': Client.getMessage(12, language),
-        # 'settings': Client.getMessage(13, language),
-        # 'edit_account': Client.getMessage(14, language),
-        # 'edit_account_updated': Client.getMessage(15, language),
-        # 'inn_accept': Client.getMessage(16, language),
-        # 'inn_only_digits': Client.getMessage(17, language),
-        # 'inn_updated': Client.getMessage(18, language),
-        # 'inn_updated_twice': Client.getMessage(19, language),
-        # 'userCurrentInfo': Client.getMessage(20, language),
-        # 'phone_only_digits': Client.getMessage(21, language),
-        # 'phone_length': Client.getMessage(22, language),
-        # 'language_changed': Client.getMessage(24, language),
-        # 'auth': Client.getMessage(25, language),
-        # 'NotAuth': Client.getMessage(26, language),
-        # 'pricelist_about': Client.getMessage(27, language),
-        # 'choose_region': Client.getMessage(28, language),
-        # 'choose_branch': Client.getMessage(29, language),
-        # 'choose_territory': Client.getMessage(30, language),
-        # 'manager_choose_action': Client.getMessage(31, language),
-        # 'manager_info': Client.getMessage(32, language),
-        # 'add_review': Client.getMessage(33, language),
-        # 'add_comment': Client.getMessage(34, language),
-        # 'thanks_for_review': Client.getMessage(35, language),
-        # 'choose_events': Client.getMessage(36, language),
-        # 'no_quizes_yet': Client.getMessage(37, language),
-        # 'choose_quiz': Client.getMessage(38, language),
-        # 'quiz_results': Client.getMessage(39, language),
-        # 'start_command': Client.getMessage(40, language),
+        'order_header': Client.get_message(30, language),
+        'order_cash': Client.get_message(31, language),
+        'order_close_time': Client.get_message(32, language),
+        'order_yes': Client.get_message(33, language),
+        'order_no': Client.get_message(34, language),
     }
 
     return MESSAGES
@@ -119,25 +89,77 @@ def GenerateCart(user: int):
                         '{:,}'.format(position.product.price * position.count).replace(',', ' ')
                     )
 
-    # for counter in range(0, cart.positions.all().count()):
-
-    #     end_text = end_text + position_text.replace(
-    #         '{count}',
-    #         str(counter + 1)
-    #         ).replace(
-    #             '{product}',
-    #             cart.positions.all()[counter].product.title
-    #         ).replace(
-    #             '{product_count}',
-    #             str(cart.positions.all()[counter].count)
-    #         )
-
     price = "{:,}".format(cart.get_price()).replace(",", " ")
     end_text += f'\n{cart_footer.replace("{cost}", price)}'
 
     return [end_text, True]
 
 
-def GenerateOrder(user):
-    # TODO cool logic for Order Generate
-    return 'lol'
+def GenerateOrder(user, data):
+
+    cart = Client.get_cart(user)
+    language = Client.get_user_language(user)
+
+    position_text = Messages(user)['position_text']
+    order_header = Messages(user)['order_header']
+    cart_footer = Messages(user)['cart_footer']
+    
+    order_user = Client.get_user(user)
+    
+    delivery = data['delivery']
+    time = data['time']
+    
+    if not time:
+        time = Messages(user)['order_close_time']
+
+    try:
+        paysystem = data['paysystem']
+        paysystem = telegram_models.PaySystem.objects.get(pk=int(paysystem)).title
+    except Exception as e:
+        paysystem = Messages(user)['order_cash']
+
+    order_header = order_header.replace(
+        '{time}', time
+        ).replace(
+            '{payment}',
+            paysystem).replace(
+                '{delivery}',
+                Messages(user)['order_yes'] if delivery else Messages(user)['order_no']
+            ).replace(
+                '{name}',
+                order_user.real_name
+                ).replace(
+                '{phone}',
+                f'+{str(order_user.phone)}'
+                )
+    end_text = f'{order_header}'
+
+    categories = core_models.Category.objects.filter(
+            language__title=str(language),
+            active=True
+            ).order_by("order")
+
+    for category in categories:
+
+        positions = cart.positions.all().filter(product__category=category)
+        if positions.count() != 0:
+
+            end_text += f'{category.title.upper()}\n'
+
+            for position in positions:
+
+                end_text = end_text + position_text.replace(
+                    '{product}',
+                    position.product.title
+                    ).replace(
+                        '{product_count}',
+                        str(position.count)
+                    ).replace(
+                        '{price}',
+                        '{:,}'.format(position.product.price * position.count).replace(',', ' ')
+                    )
+
+    price = "{:,}".format(cart.get_price()).replace(",", " ")
+    end_text += f'\n{cart_footer.replace("{cost}", price)}'
+
+    return end_text

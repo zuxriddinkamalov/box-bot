@@ -168,7 +168,7 @@ class Client():
                 position.count = position.count + quantity
                 position.save()
 
-            return cart
+                return cart
 
         except Exception as e:
 

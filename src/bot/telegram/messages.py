@@ -46,6 +46,8 @@ def Messages(user: int):
         'order_no': Client.get_message(34, language),
         'order_edit': Client.get_message(35, language),
         'info_updated': Client.get_message(36, language),
+        'checkout_title': Client.get_message(37, language),
+        'checkout_description': Client.get_message(38, language),
     }
 
     return MESSAGES

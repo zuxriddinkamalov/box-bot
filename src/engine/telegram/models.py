@@ -1,5 +1,5 @@
 from django.db import models
-from core.models import Language, CartBase, Settings
+from core.models import Language, CartBase, Settings, OrderBase
 from django.utils import timezone
 
 
@@ -14,12 +14,27 @@ class PaySystem(models.Model):
         null=False,
         blank=False
         )
-    
+
     token = models.CharField(
         'Token',
         max_length=1024,
         null=False,
         blank=False
+        )
+
+    currency = models.CharField(
+        'Currency',
+        max_length=10,
+        default="",
+        null=False,
+        blank=False
+        )
+
+    eq = models.IntegerField(
+        'PaySystem Equalizer',
+        default=100,
+        blank=False,
+        null=False
         )
 
     active = models.BooleanField(
@@ -132,3 +147,55 @@ class Settings(Settings):
 
     def __str__(self):
         return self.title
+
+
+class Order(OrderBase):
+
+    cart = models.ForeignKey(
+        Cart,
+        on_delete=models.CASCADE
+    )
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE
+        )
+
+    latitude = models.FloatField(
+        'Latitude',
+        default=0.0,
+        null=False,
+        blank=False
+    )
+
+    longitude = models.FloatField(
+        'Longitude',
+        default=0.0,
+        null=False,
+        blank=False
+    )
+    
+    paysystem = models.ForeignKey(
+        PaySystem,
+        default=None,
+        on_delete=models.CASCADE,
+        related_name='paysystem_telegram_order',
+        null=True,
+        blank=True
+        )
+
+    def get_price(self):
+
+        total = 0
+
+        for position in self.cart.positions.all():
+            total += position.get_price()
+        return total
+
+    def get_count(self):
+
+        count = 0
+
+        for position in self.cart.positions.all():
+            count += position.count
+        return count

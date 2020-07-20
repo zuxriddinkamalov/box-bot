@@ -451,3 +451,42 @@ def OrderEditKeyboard(user):
     keyboard.inline_keyboard = end_buttons
 
     return keyboard
+
+
+def PayKeyboard(user, back=True):
+
+    language = Client.get_user_language(user)
+
+    buttons = Client.get_buttons(language, 17)
+    end_buttons = []
+
+    end_buttons.append(
+        InlineKeyboardButton(buttons[0].title, pay=True)
+        )
+    
+    if back:
+    
+        end_buttons.append(
+            InlineKeyboardButton(buttons[1].title, callback_data=f'{buttons[1].button_code}')
+            )
+
+        end_buttons = BuildMenu(
+            end_buttons[:-1],
+            1,
+            footer_buttons=[end_buttons[-1]],
+            )
+    else:
+        
+        end_buttons.append(
+            InlineKeyboardButton(buttons[1].title, callback_data=f'{buttons[1].button_code}')
+            )
+
+        end_buttons = BuildMenu(
+            end_buttons,
+            1,
+            )
+
+    keyboard = InlineKeyboardMarkup()
+    keyboard.inline_keyboard = end_buttons
+
+    return keyboard

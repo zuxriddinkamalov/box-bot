@@ -30,3 +30,5 @@ class User(StatesGroup):
     PaySystemChooseEdit = State()
     OrderCartEdit = State()
     OrderEditQuantity = State()
+    PreCheckout = State()
+    SuccessfulPayment = State()

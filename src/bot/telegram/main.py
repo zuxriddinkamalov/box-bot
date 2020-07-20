@@ -4,7 +4,7 @@ import logging
 
 import asyncio
 
-
+from aiogram.types.message import ContentTypes
 # aiogram import
 from aiogram import Bot, types
 from aiogram.utils import executor
@@ -1075,9 +1075,7 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
 
             await bot.send_message(user, text, reply_markup=markup)
             
-            
         return
-
 
     async with state.proxy() as data:
 
@@ -1197,7 +1195,6 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
         await bot.send_message(user, text, reply_markup=markup)
 
     if 'cash' in button_code:
-        
 
         async with state.proxy() as data:
 
@@ -1218,7 +1215,6 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
 
     await bot.answer_callback_query(callback_query.id)
     await bot.delete_message(user, callback_query.message.message_id)
-    
 
     if "back" in data:
 
@@ -1341,9 +1337,9 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
             
             text = Messages(user)['order_accepted']
             
-            Client.create_order(user)
-            # TODO cool logic with order acceptance & channel notification
-            # TODO make django model signal to send notification to Telegram Channel
+            async with state.proxy() as data:
+
+                Client.create_order(user, data)
 
             markup = None
             await bot.send_message(user, text, reply_markup=markup)
@@ -1358,6 +1354,44 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
             
             text = Messages(user)['order_accepted']
             
+            cart = Client.get_cart(user)
+            async with state.proxy() as data:
+
+                paysystem = data['paysystem']
+            
+            paysystem = Client.get_paysystem_token(int(paysystem))
+            
+            prices = []
+            for position in cart.positions.all():
+                text = f'{position.product.title} x {position.count}'
+                prices.append(
+                    types.LabeledPrice(label=text, amount=position.product.price * paysystem.eq)
+                    )
+                
+            await states.User.PreCheckout.set()
+            
+            msg = await bot.send_invoice(
+                user,
+                title=Messages(user)['checkout_title'].upper(),
+                description=Messages(user)['checkout_description'],
+                provider_token=paysystem.token,
+                currency=paysystem.currency,
+                # photo_url='https://telegra.ph/file/4953b697a61d1c6bfba30.jpg',
+                photo_height=512,  # !=0/None or picture won't be shown
+                photo_width=512,
+                photo_size=512,
+                is_flexible=False,  # True If you need to set up Shipping Fee
+                prices=prices,
+                start_parameter='cinema-system-payment',
+                payload='HAPPY FRIDAYS COUPON',
+                reply_markup=keyboards.PayKeyboard(user, False)
+                )
+            
+            
+            async with state.proxy() as data:
+
+                data['check_message'] = msg.message_id
+
         return
     
     if 'edit' in button_code:
@@ -1366,6 +1400,62 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
 
         text = Messages(user)['order_edit']
         markup = keyboards.OrderEditKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+        
+        return
+    
+
+@dp.pre_checkout_query_handler(lambda query: True, state=states.User.PreCheckout)
+async def checkout(pre_checkout_query: types.PreCheckoutQuery):
+    await bot.answer_pre_checkout_query(
+        pre_checkout_query.id, 
+        ok=True,
+        error_message="При проведении платежа, произошла ошибка. Если проблема повторится, пожалуйста, обратитесь в тех-поддержку"
+        )
+    
+    await states.User.SuccessfulPayment.set()
+    
+    
+
+
+@dp.message_handler(content_types=ContentTypes.SUCCESSFUL_PAYMENT, state=states.User.SuccessfulPayment)
+async def got_payment(message: types.Message, state: FSMContext):
+    
+    user = int(message.chat.id)
+    text = Messages(user)['order_accepted']
+    
+    async with state.proxy() as data:
+
+        Client.create_order(user, data)
+
+    markup = None
+    await bot.send_message(user, text, reply_markup=markup)
+
+    await states.User.MainMenu.set()
+
+    text = Messages(user)['main_menu']
+    markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
+    await bot.send_message(user, text, reply_markup=markup)
+    
+
+@dp.callback_query_handler(state=states.User.PreCheckout)
+async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
+    user = int(callback_query.from_user.id)
+    data = callback_query.data
+
+    await bot.answer_callback_query(callback_query.id)
+    await bot.delete_message(user, callback_query.message.message_id)
+    
+
+    if "back" in data:
+
+        await states.User.OrderAccept.set()
+
+        async with state.proxy() as data:
+
+            text = GenerateOrder(user, data)
+
+        markup = keyboards.OrderAcceptKeyboard(user)
         await bot.send_message(user, text, reply_markup=markup)
         
         return

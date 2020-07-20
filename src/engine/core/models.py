@@ -695,3 +695,91 @@ class CartBase(models.Model):
     def save(self, *args, **kwargs):
         self.updatedAt = timezone.now()
         super(CartBase, self).save(*args, **kwargs)
+
+
+class OrderStatus(models.Model):
+
+    title = models.CharField(
+        'Title',
+        max_length=256,
+        null=False,
+        blank=False
+        )
+
+    order = models.IntegerField(
+        'Status Number',
+        default=0,
+        blank=False,
+        null=False
+        )
+
+    def __str__(self):
+        return f'{self.title} - {self.order}'
+
+class OrderBase(models.Model):
+
+    delivery = models.BooleanField(
+        'Delivery',
+        default=False,
+        null=False,
+        blank=False
+        )
+
+    time = models.CharField(
+        "Time",
+        default='Ближайшее время',
+        max_length=1024,
+        blank=False,
+        null=False
+        )
+
+    card = models.BooleanField(
+        'Card',
+        default=False,
+        null=False,
+        blank=False
+        )
+
+    phone = models.BigIntegerField(
+        'Phone',
+        default=0,
+        blank=False,
+        null=False
+        )
+
+    name = models.CharField(
+        "Name",
+        default='',
+        max_length=1024,
+        blank=False,
+        null=False
+        )
+
+    active = models.BooleanField(
+        'Active',
+        default=True,
+        null=False,
+        blank=False
+        )
+
+    status = models.ForeignKey(
+        OrderStatus,
+        on_delete=models.CASCADE
+    )
+
+    created_at = models.DateTimeField(
+        'Created at',
+        auto_now_add=True,
+        null=False,
+        blank=False
+        )
+
+    updated_at = models.DateTimeField(
+        'Last view',
+        auto_now=True,
+        null=False,
+        blank=False)
+
+    def save(self, *args, **kwargs):
+        self.updatedAt = timezone.now()
+        super(OrderBase, self).save(*args, **kwargs)

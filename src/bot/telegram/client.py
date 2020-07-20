@@ -43,6 +43,15 @@ class Client():
             }
 
     @classmethod
+    def get_paysystem_token(self, id: int):
+
+        paysystem = telegram_models.PaySystem.objects.filter(
+            active=True
+            ).get(pk=id)
+
+        return paysystem
+
+    @classmethod
     def is_verified(self, user: int):
         user = self.get_user(user)
 
@@ -361,6 +370,54 @@ class Client():
 
         obj.views = obj.views + 1
         obj.save()
+
+    @classmethod
+    def create_order(self, user: int, data):
+
+        cart = self.get_cart(user)
+        user = self.get_user(user)
+        status = core_models.OrderStatus.objects.get(order=1)
+
+        delivery = data['delivery']
+        time = data['time']
+        card = data['card']
+
+        order = telegram_models.Order()
+        order.user = user
+        order.phone = user.phone
+        order.name = user.real_name
+
+        order.cart = cart
+        
+        order.status = status
+
+        if card:
+            print(data['paysystem'])
+            paysystem = telegram_models.PaySystem.objects.get(pk=int(data['paysystem']))
+            order.card = card
+        else:
+            paysystem = None
+            order.card = card
+            
+        order.paysystem = paysystem
+        print(data['paysystem'])
+        
+
+        if time:
+
+            order.time = time
+
+        if delivery:
+
+            order.delivery = delivery
+            order.latitude = data['location_x']
+            order.longitude = data['location_y']
+
+        order.save()
+
+        cart.active = False
+        cart.save()
+        return order
 
 
 if __name__ == "__main__":

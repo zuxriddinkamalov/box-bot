@@ -11,6 +11,8 @@ admin.site.register(models.Announcement)
 admin.site.register(models.Event)
 admin.site.register(models.CartBase)
 admin.site.register(models.Category)
+admin.site.register(models.OrderStatus)
+
 
 
 @admin.register(models.Button)

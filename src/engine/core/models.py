@@ -188,7 +188,7 @@ class Button(models.Model):
 
                 for language in Language.objects.all():
 
-                    if Button.objects.filter(language__title=language.title, title=self.title, button_code=self.button_code).count() == 0:
+                    if Button.objects.filter(language__title=language.title, button_code=self.button_code).count() == 0:
 
                         translated = Button()
                         translated.title = self.title

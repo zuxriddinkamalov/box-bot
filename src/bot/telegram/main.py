@@ -173,12 +173,98 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
             markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
             await bot.send_message(user, text, reply_markup=markup)
             
+    if button_code == 'news':
+        
+        await states.User.NewsShow.set()
+        
+        news = Client.get_all_news(user)
+        if news.count() != 0:
 
+            currentAnnouncement = news.first()
+            text = currentAnnouncement.text
+            photo = Client.get_photo(currentAnnouncement)
+            
+            Client.tick_view(currentAnnouncement)
 
-    
-    
+            markup = keyboards.PaginationKeyboard(user, 1, len(news))
+            msg = await bot.send_photo(user, photo[0], caption=text, reply_markup=markup)
+            if not photo[1]:
+                Client.update_photo(photo[2], msg.photo[-1].file_id)
+
+        else:
+
+            text = Messages(user)['noNews']
+            markup = None
+            await bot.send_message(user, text, reply_markup=markup)
+
+            await states.User.MainMenu.set()
+
+            text = Messages(user)['main_menu']
+            markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
+            
+            await bot.send_message(user, text, reply_markup=markup)
 
             
+@dp.callback_query_handler(state=states.User.NewsShow)
+async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
+    user = callback_query.from_user.id
+    data = callback_query.data
+    
+    if "empty" in data:
+        await bot.answer_callback_query(callback_query.id)
+
+        return
+
+    if "next" in data:
+
+        await bot.answer_callback_query(callback_query.id)
+        next = int(data.replace("next ", ""))
+
+        news = Client.get_all_news(user)
+        currentAnnouncement = news[next-1]
+        text = currentAnnouncement.text
+        photo = Client.get_photo(currentAnnouncement)
+
+        Client.tick_view(currentAnnouncement)
+
+        markup = keyboards.PaginationKeyboard(user, next, len(news))
+        await bot.delete_message(user, callback_query.message.message_id)
+        msg = await bot.send_photo(user, photo[0], caption=text, reply_markup=markup)
+        # await bot.edit_message_media(InputMediaPhoto())
+        if not photo[1]:
+            Client.update_photo(photo[2], msg.photo[-1].file_id)
+
+    if "prev" in data:
+
+        await bot.answer_callback_query(callback_query.id)
+        prev = int(data.replace("prev ", ""))
+
+        news = Client.get_all_news(user)
+        currentAnnouncement = news[prev-1]
+        text = currentAnnouncement.text
+        photo = Client.get_photo(currentAnnouncement)
+
+        Client.tick_view(currentAnnouncement)
+
+        markup = keyboards.PaginationKeyboard(user, prev, len(news))
+        await bot.delete_message(user, callback_query.message.message_id)
+        msg = await bot.send_photo(user, photo[0], caption=text, reply_markup=markup)
+        # await bot.edit_message_media(InputMediaPhoto())
+        if not photo[1]:
+            Client.update_photo(photo[2], msg.photo[-1].file_id)
+
+    if "back" in data:
+
+        await bot.answer_callback_query(callback_query.id)
+
+        await bot.delete_message(user, callback_query.message.message_id)
+
+        await states.User.MainMenu.set()
+
+        text = Messages(user)['main_menu']
+        markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
+        
+        await bot.send_message(user, text, reply_markup=markup)
 
 
 @dp.callback_query_handler(state=states.User.Category)

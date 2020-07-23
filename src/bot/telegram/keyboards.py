@@ -604,3 +604,36 @@ def BranchSelectKeyboard(user):
     keyboard.inline_keyboard = end_buttons
 
     return keyboard
+
+
+def PaginationKeyboard(user, current, length):
+    current = int(current)
+    length = int(length)
+
+    lan = Client.get_user_language(user)
+
+    buttons = Client.get_buttons(lan, 22)
+    end_buttons = []
+    if length!=1:
+        prev = current - 1 if current != 1 else length
+        next = current + 1 if current != length else 1
+    else:
+        prev = 'empty'
+        next = 'empty'
+
+    end_buttons.append(InlineKeyboardButton(buttons[0].title, callback_data=f"prev {prev}"))
+
+    end_buttons.append(InlineKeyboardButton(buttons[1].title.replace("{current}", str(current)).replace("{length}", str(length)),
+                                                                        callback_data="empty"))
+
+    end_buttons.append(InlineKeyboardButton(buttons[2].title, callback_data=f"next {next}"))
+
+    footer_button = InlineKeyboardButton(buttons.reverse()[0].title, callback_data="back")
+    if len(end_buttons) != 3:
+        end_buttons = BuildMenu(end_buttons, 2, footer_buttons=[footer_button])
+    else:
+        end_buttons = BuildMenu(end_buttons, 3, footer_buttons=[footer_button])
+
+    keyboard = InlineKeyboardMarkup()
+    keyboard.inline_keyboard = end_buttons
+    return keyboard

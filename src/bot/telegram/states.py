@@ -34,3 +34,4 @@ class User(StatesGroup):
     SuccessfulPayment = State()
     SetBranch = State()
     EditBranch = State()
+    NewsShow = State()

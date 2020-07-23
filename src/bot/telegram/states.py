@@ -35,3 +35,5 @@ class User(StatesGroup):
     SetBranch = State()
     EditBranch = State()
     NewsShow = State()
+    Events = State()
+    EventsShow = State()

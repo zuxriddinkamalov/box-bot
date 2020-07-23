@@ -53,6 +53,8 @@ def Messages(user: int):
         'in_porgress_to_delivery': Client.get_message(41, language),
         'in_porgress_to_self': Client.get_message(42, language),
         'noNews': Client.get_message(43, language),
+        'choose_events': Client.get_message(44, language),
+        'noEvents': Client.get_message(45, language),
     }
 
     return MESSAGES

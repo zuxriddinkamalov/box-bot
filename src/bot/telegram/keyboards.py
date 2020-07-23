@@ -610,9 +610,9 @@ def PaginationKeyboard(user, current, length):
     current = int(current)
     length = int(length)
 
-    lan = Client.get_user_language(user)
+    language = Client.get_user_language(user)
 
-    buttons = Client.get_buttons(lan, 22)
+    buttons = Client.get_buttons(language, 22)
     end_buttons = []
     if length!=1:
         prev = current - 1 if current != 1 else length
@@ -637,3 +637,15 @@ def PaginationKeyboard(user, current, length):
     keyboard = InlineKeyboardMarkup()
     keyboard.inline_keyboard = end_buttons
     return keyboard
+
+
+def EventsKeyboard(user):
+    language = Client.get_user_language(user)
+
+    buttons = Client.get_buttons(language, 23)
+
+    end_buttons = []
+    for button in buttons:
+        end_buttons.append(KeyboardButton(button.title))
+    end_buttons = BuildMenu(end_buttons, 2)
+    return ReplyKeyboardMarkup(end_buttons, resize_keyboard=True, one_time_keyboard=True)

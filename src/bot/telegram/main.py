@@ -203,6 +203,166 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
             markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
             
             await bot.send_message(user, text, reply_markup=markup)
+        return
+    
+    if button_code == 'events':
+        
+        text = Messages(user)['choose_events']
+        await states.User.Events.set()
+
+        markup = keyboards.EventsKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+
+        return
+    
+
+@dp.message_handler(state=states.User.Events)
+async def user_ammount_handler(message: types.Message, state: FSMContext):
+    user = message.from_user.id
+    recieved_text = message.text
+    lan = Client.get_user_language(user)
+
+    try:
+        button_code = Client.get_buttons(lan, 23).get(title=recieved_text).button_code
+    except Exception as e:
+        return
+
+    if 'back' in button_code:
+        await states.User.MainMenu.set()
+
+        text = Messages(user)['main_menu']
+        markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
+        await bot.send_message(user, text, reply_markup=markup)
+
+        return
+
+    if button_code == 'active_events':
+        # "Действующие акции button handler"
+        
+        await states.User.EventsShow.set()
+        
+        events = Client.get_all_event(user).filter(active=True)
+
+        if events.count() != 0:
+            currentAnnouncement = events.first()
+            text = currentAnnouncement.text
+            photo = Client.get_photo(currentAnnouncement)
+
+            Client.tick_view(currentAnnouncement)
+
+            markup = keyboards.PaginationKeyboard(user, 1, len(events))
+            msg = await bot.send_photo(user, photo[0], caption=text, reply_markup=markup)
+            if not photo[1]:
+                Client.update_photo(photo[2], msg.photo[-1].file_id)
+        else:
+            text = Messages(user)['noEvents']
+            markup = None
+            await bot.send_message(user, text, reply_markup=markup)
+
+            text = Messages(user)['choose_events']
+            await states.User.Events.set()
+
+            markup = keyboards.EventsKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
+
+            return
+            
+    if button_code == 'archive_events':
+        # 'Архив акций' button handler
+        
+        await states.User.EventsShow.set()
+        
+        events = Client.get_all_event(user).filter(active=False)
+
+        if events.count() != 0:
+            currentAnnouncement = events.first()
+            text = currentAnnouncement.text
+            photo = Client.get_photo(currentAnnouncement)
+
+            Client.tick_view(currentAnnouncement)
+
+            markup = keyboards.PaginationKeyboard(user, 1, len(events))
+            msg = await bot.send_photo(user, photo[0], caption=text, reply_markup=markup)
+            if not photo[1]:
+                Client.update_photo(photo[2], msg.photo[-1].file_id)
+        else:
+            text = Messages(user)['noEvents']
+            await states.User.RealName.set()
+
+            markup = None
+            await bot.send_message(user, text, reply_markup=markup)
+
+            text = Messages(user)['choose_events']
+            await states.User.Events.set()
+
+            markup = keyboards.EventsKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
+
+            return
+        
+
+@dp.callback_query_handler(state=states.User.EventsShow)
+async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
+    user = callback_query.from_user.id
+    data = callback_query.data
+
+    if "empty" in data:
+        await bot.answer_callback_query(callback_query.id)
+        
+        return
+
+    if "next" in data:
+
+        await bot.answer_callback_query(callback_query.id)
+        next = int(data.replace("next ", ""))
+
+        events = Client.get_all_events(user)
+        currentAnnouncement = events[next-1]
+        text = currentAnnouncement.text
+        photo = Client.get_photo(currentAnnouncement)
+
+        Client.tick_view(currentAnnouncement)
+
+        markup = keyboards.PaginationKeyboard(user, next, len(events))
+        await bot.delete_message(user, callback_query.message.message_id)
+        msg = await bot.send_photo(user, photo[0], caption=text, reply_markup=markup)
+        # await bot.edit_message_media(InputMediaPhoto())
+        if not photo[1]:
+            Client.update_photo(photo[2], msg.photo[-1].file_id)
+
+    if "prev" in data:
+
+        await bot.answer_callback_query(callback_query.id)
+        prev = int(data.replace("prev ", ""))
+
+        events = Client.get_all_events(user)
+        currentAnnouncement = events[prev-1]
+        text = currentAnnouncement.text
+        photo = Client.get_photo(currentAnnouncement)
+
+        Client.tick_view(currentAnnouncement)
+
+        markup = keyboards.PaginationKeyboard(user, prev, len(events))
+        await bot.delete_message(user, callback_query.message.message_id)
+        msg = await bot.send_photo(user, photo[0], caption=text, reply_markup=markup)
+        # await bot.edit_message_media(InputMediaPhoto())
+        if not photo[1]:
+            Client.update_photo(photo[2], msg.photo[-1].file_id)
+
+    if "back" in data:
+
+        await bot.answer_callback_query(callback_query.id)
+
+        await bot.delete_message(user, callback_query.message.message_id)
+
+        await states.User.MainMenu.set()
+
+        text = Messages(user)['main_menu']
+        markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
+        await bot.send_message(user, text, reply_markup=markup)
+
+    if data == "empty":
+        await bot.answer_callback_query(callback_query.id)
 
             
 @dp.callback_query_handler(state=states.User.NewsShow)

@@ -44,6 +44,17 @@ def Messages(user: int):
         'order_close_time': Client.get_message(32, language),
         'order_yes': Client.get_message(33, language),
         'order_no': Client.get_message(34, language),
+        'order_edit': Client.get_message(35, language),
+        'info_updated': Client.get_message(36, language),
+        'checkout_title': Client.get_message(37, language),
+        'checkout_description': Client.get_message(38, language),
+        'set_branch': Client.get_message(39, language),
+        'in_porgress_cooking': Client.get_message(40, language),
+        'in_porgress_to_delivery': Client.get_message(41, language),
+        'in_porgress_to_self': Client.get_message(42, language),
+        'noNews': Client.get_message(43, language),
+        'choose_events': Client.get_message(44, language),
+        'noEvents': Client.get_message(45, language),
     }
 
     return MESSAGES
@@ -57,6 +68,16 @@ def GenerateCart(user: int):
     if cart is None:
 
         return [Messages(user)['cart_is_empty'], False]
+    
+    positions = cart.positions.all()
+    for position in positions:
+        if position.product.language.title != language:
+            position.product = core_models.Product.objects.filter(
+                language__title=language
+                ).get(
+                    code=position.product.code
+                    )
+            position.save()
 
     position_text = Messages(user)['position_text']
     cart_header = Messages(user)['cart_header']
@@ -95,14 +116,30 @@ def GenerateCart(user: int):
     return [end_text, True]
 
 
-def GenerateOrder(user, data):
+def GenerateOrder(user, data, channel=False):
 
     cart = Client.get_cart(user)
-    language = Client.get_user_language(user)
+    if not channel:
+        language = Client.get_user_language(user)
+        ru_lan_user = user
+    else:
+        ru_lan_user = telegram_models.User.objects.filter(language__title='ru').first()
+        language = ru_lan_user.language
+        ru_lan_user = ru_lan_user.chat_id
+        
+    positions = cart.positions.all()
+    for position in positions:
+        if position.product.language.title != language:
+            position.product = core_models.Product.objects.filter(
+                language__title=language
+                ).get(
+                    code=position.product.code
+                    )
+            position.save()
 
-    position_text = Messages(user)['position_text']
-    order_header = Messages(user)['order_header']
-    cart_footer = Messages(user)['cart_footer']
+    position_text = Messages(ru_lan_user)['position_text']
+    order_header = Messages(ru_lan_user)['order_header']
+    cart_footer = Messages(ru_lan_user)['cart_footer']
     
     order_user = Client.get_user(user)
     
@@ -110,13 +147,13 @@ def GenerateOrder(user, data):
     time = data['time']
     
     if not time:
-        time = Messages(user)['order_close_time']
+        time = Messages(ru_lan_user)['order_close_time']
 
     try:
         paysystem = data['paysystem']
         paysystem = telegram_models.PaySystem.objects.get(pk=int(paysystem)).title
     except Exception as e:
-        paysystem = Messages(user)['order_cash']
+        paysystem = Messages(ru_lan_user)['order_cash']
 
     order_header = order_header.replace(
         '{time}', time
@@ -124,7 +161,7 @@ def GenerateOrder(user, data):
             '{payment}',
             paysystem).replace(
                 '{delivery}',
-                Messages(user)['order_yes'] if delivery else Messages(user)['order_no']
+                Messages(ru_lan_user)['order_yes'] if delivery else Messages(ru_lan_user)['order_no']
             ).replace(
                 '{name}',
                 order_user.real_name

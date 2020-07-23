@@ -1,7 +1,7 @@
 from django.db import models
-from core.models import Language, CartBase, Settings, OrderBase
+from core.models import Language, CartBase, Settings, OrderBase, BranchBase
 from django.utils import timezone
-
+import hashlib
 
 # Create your models here.
 
@@ -143,8 +143,6 @@ class Cart(CartBase):
 
 class Settings(Settings):
 
-    managers = models.ManyToManyField(User, blank=True)
-
     def __str__(self):
         return self.title
 
@@ -174,7 +172,7 @@ class Order(OrderBase):
         null=False,
         blank=False
     )
-    
+
     paysystem = models.ForeignKey(
         PaySystem,
         default=None,
@@ -182,6 +180,31 @@ class Order(OrderBase):
         related_name='paysystem_telegram_order',
         null=True,
         blank=True
+        )
+
+    selected_branch = models.ForeignKey(
+        'Branch',
+        default=None,
+        on_delete=models.CASCADE,
+        related_name='selected_branch_telegram_order',
+        null=True,
+        blank=True
+        )
+
+    manager = models.ForeignKey(
+        User,
+        default=None,
+        on_delete=models.CASCADE,
+        related_name='manager_telegram_order',
+        null=True,
+        blank=True
+        )
+
+    address = models.TextField(
+        'Posible Address',
+        default="",
+        blank=False,
+        null=False
         )
 
     def get_price(self):
@@ -199,3 +222,36 @@ class Order(OrderBase):
         for position in self.cart.positions.all():
             count += position.count
         return count
+
+
+class Branch(BranchBase):
+
+    latitude = models.FloatField(
+        'Latitude',
+        default=0.0,
+        null=False,
+        blank=False
+    )
+
+    longitude = models.FloatField(
+        'Longitude',
+        default=0.0,
+        null=False,
+        blank=False
+    )
+
+    managers = models.ManyToManyField(
+        User,
+        blank=True
+        )
+
+    channel = models.BigIntegerField(
+        'Channel Id',
+        default=0,
+        blank=False,
+        null=False
+        )
+
+
+    # def __str__(self):
+    #     return self.title

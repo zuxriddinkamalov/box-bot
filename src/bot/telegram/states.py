@@ -32,3 +32,5 @@ class User(StatesGroup):
     OrderEditQuantity = State()
     PreCheckout = State()
     SuccessfulPayment = State()
+    SetBranch = State()
+    EditBranch = State()

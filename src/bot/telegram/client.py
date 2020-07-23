@@ -5,6 +5,9 @@ from aiogram.types import InputFile
 
 from db import proj_path, core_models, telegram_models, Paginator
 
+from geopy.geocoders import Nominatim
+from geopy.distance import geodesic
+
 
 class Client():
 
@@ -355,6 +358,13 @@ class Client():
         return telegram_models.PaySystem.objects.filter(
             active=True
             ).order_by('order')
+        
+    @classmethod
+    def get_branches(self):
+
+        return telegram_models.Branch.objects.filter(
+            active=True
+            ).order_by('order')
 
     @classmethod
     def update_photo(self, photo_id: int, file_id: str):
@@ -370,6 +380,11 @@ class Client():
 
         obj.views = obj.views + 1
         obj.save()
+        
+    @classmethod
+    def get_order(self, order: int):
+        
+        return telegram_models.Order.objects.get(pk=order)
 
     @classmethod
     def create_order(self, user: int, data):
@@ -381,27 +396,30 @@ class Client():
         delivery = data['delivery']
         time = data['time']
         card = data['card']
+        try:
+            branch = int(data['branch'])
+        except Exception as e:
+            pass
 
         order = telegram_models.Order()
         order.user = user
         order.phone = user.phone
         order.name = user.real_name
+        
+        closest = True
 
         order.cart = cart
-        
+
         order.status = status
 
         if card:
-            print(data['paysystem'])
             paysystem = telegram_models.PaySystem.objects.get(pk=int(data['paysystem']))
             order.card = card
         else:
             paysystem = None
             order.card = card
-            
+
         order.paysystem = paysystem
-        print(data['paysystem'])
-        
 
         if time:
 
@@ -413,7 +431,39 @@ class Client():
             order.latitude = data['location_x']
             order.longitude = data['location_y']
 
+            try:
+                geolocator = Nominatim(user_agent="onezeth")
+                
+                location = geolocator.reverse(f"{data['location_x']}, {data['location_y']}", language='ru-RU')
+                order.address = location.address
+
+            except Exception as e:
+                print(e)
+                order.address = ''
+
+            if closest:
+
+                min = 1000000.0
+                branch_number = None
+                for branch in telegram_models.Branch.objects.filter(active=True):
+
+                    point1 = (float(data['location_x']), float(data['location_y']))
+                    point2 = (branch.latitude, branch.longitude)
+                    distance = geodesic(point1, point2).km
+                    if float(distance) < min:
+                        
+                        branch_number = branch
+                        min = distance
+
+                order.selected_branch = branch_number
+
+        else:
+
+            order.selected_branch = telegram_models.Branch.objects.get(pk=branch)
+
         order.save()
+        
+        print(order.selected_branch)
 
         cart.active = False
         cart.save()

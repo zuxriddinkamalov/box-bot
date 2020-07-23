@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+import hashlib
 
 # Create your models here.
 
@@ -521,6 +522,14 @@ class Product(models.Model):
         blank=False,
         null=False
         )
+    
+    code = models.CharField(
+        "Unique Code",
+        default=None,
+        max_length=255,
+        blank=False,
+        null=False
+        )
 
     category = models.ForeignKey(
         Category,
@@ -568,9 +577,12 @@ class Product(models.Model):
 
     def save(self, translate=True, *args, **kwargs):
 
+
         if translate:
 
             if self.pk is None:
+                
+                self.code = str(hashlib.md5(self.title.encode('utf-8')).hexdigest())
 
                 for language in Language.objects.all():
 
@@ -578,6 +590,7 @@ class Product(models.Model):
 
                         translated = Product()
                         translated.title = self.title
+                        translated.code = self.code
 
                         filtered_cat = Category.objects.filter(code=self.category.code, language=language)
 
@@ -783,3 +796,114 @@ class OrderBase(models.Model):
     def save(self, *args, **kwargs):
         self.updatedAt = timezone.now()
         super(OrderBase, self).save(*args, **kwargs)
+
+
+class Region(models.Model):
+
+    title = models.CharField(
+        'Title',
+        max_length=10,
+        null=False,
+        blank=False
+        )
+
+    def __str__(self):
+        return self.title
+
+
+class BranchTitle(models.Model):
+
+    title = models.CharField(
+        'Title',
+        max_length=255,
+        null=False,
+        blank=False
+        )
+
+    language = models.ForeignKey(
+        Language,
+        on_delete=models.CASCADE,
+        related_name="branch_language",
+        blank=True,
+        null=True,
+        )
+
+    def save(self, translate=True, *args, **kwargs):
+
+        if translate:
+
+            if self.pk is None:
+
+                for language in Language.objects.all():
+
+                    if BranchTitle.objects.filter(language__title=language.title, title=self.title).count() == 0:
+
+                        translated = Message()
+                        translated.title = self.title
+                        translated.language = language
+
+                        translated.save(translate=False)
+
+            else:
+
+                super(BranchTitle, self).save(*args, **kwargs)
+
+        else:
+
+            super(BranchTitle, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return self.title
+
+
+class BranchBase(models.Model):
+
+    title = models.ManyToManyField(
+        BranchTitle
+    )
+
+    code = models.CharField(
+        "Unique Code",
+        default='',
+        max_length=255,
+        blank=False,
+        null=False
+        )
+
+    description = models.CharField(
+        'Description',
+        max_length=255,
+        default=""
+        )
+
+    region = models.ForeignKey(
+        Region,
+        on_delete=models.CASCADE
+    )
+    
+    active = models.BooleanField(
+        'Active',
+        default=True,
+        null=False,
+        blank=False
+        )
+
+    created_at = models.DateTimeField(
+        'Created at',
+        auto_now_add=True,
+        null=False,
+        blank=False
+        )
+
+    updated_at = models.DateTimeField(
+        'Last view',
+        auto_now=True,
+        null=False,
+        blank=False)
+    
+    def save(self, *args, **kwargs):
+        self.updatedAt = timezone.now()
+        super(BranchBase, self).save(*args, **kwargs)
+
+    # def __str__(self):
+    #     return 

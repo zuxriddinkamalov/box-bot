@@ -12,7 +12,8 @@ admin.site.register(models.Event)
 admin.site.register(models.CartBase)
 admin.site.register(models.Category)
 admin.site.register(models.OrderStatus)
-
+admin.site.register(models.Region)
+admin.site.register(models.BranchTitle)
 
 
 @admin.register(models.Button)

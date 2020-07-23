@@ -490,3 +490,117 @@ def PayKeyboard(user, back=True):
     keyboard.inline_keyboard = end_buttons
 
     return keyboard
+
+
+def OrderAcceptOrRejectKeyboard(order):
+    
+    language = Client_module.core_models.Language.objects.get(title='ru')
+
+    buttons = Client.get_buttons(language, 18)
+    end_buttons = []
+    for button in buttons:
+        end_buttons.append(
+            InlineKeyboardButton(button.title, callback_data=f'{button.button_code} {order}')
+        )
+        
+    end_buttons = BuildMenu(
+            end_buttons,
+            2,
+        )
+
+    keyboard = InlineKeyboardMarkup()
+    keyboard.inline_keyboard = end_buttons
+
+    return keyboard
+
+
+def DeliveryStatusKeyboard(order):
+    
+    language = Client_module.core_models.Language.objects.get(title='ru')
+
+    buttons = Client.get_buttons(language, 19)
+    end_buttons = []
+    for button in buttons:
+        end_buttons.append(
+            InlineKeyboardButton(button.title, callback_data=f'{button.button_code} {order}')
+        )
+        
+    end_buttons = BuildMenu(
+            end_buttons,
+            1,
+        )
+
+    keyboard = InlineKeyboardMarkup()
+    keyboard.inline_keyboard = end_buttons
+
+    return keyboard
+
+
+def SelfStatusKeyboard(order):
+    
+    language = Client_module.core_models.Language.objects.get(title='ru')
+
+    buttons = Client.get_buttons(language, 20)
+    end_buttons = []
+    for button in buttons:
+        end_buttons.append(
+            InlineKeyboardButton(button.title, callback_data=f'{button.button_code} {order}')
+        )
+        
+    end_buttons = BuildMenu(
+            end_buttons,
+            1,
+        )
+
+    keyboard = InlineKeyboardMarkup()
+    keyboard.inline_keyboard = end_buttons
+
+    return keyboard
+
+
+def EndStatusKeyboard(order):
+
+    language = Client_module.core_models.Language.objects.get(title='ru')
+
+    buttons = Client.get_buttons(language, 21)
+    end_buttons = []
+    for button in buttons:
+        end_buttons.append(
+            InlineKeyboardButton(button.title, callback_data=f'{button.button_code} {order}')
+        )
+
+    end_buttons = BuildMenu(
+            end_buttons,
+            1,
+        )
+
+    keyboard = InlineKeyboardMarkup()
+    keyboard.inline_keyboard = end_buttons
+
+    return keyboard
+
+
+def BranchSelectKeyboard(user):
+
+    language = Client.get_user_language(user)
+
+    button = Client.get_buttons(language, 6).first()
+    end_buttons = []
+
+    branches = Client_module.telegram_models.Branch.objects.filter(active=True)
+
+    for position in branches:
+
+        end_buttons.append(InlineKeyboardButton(f'{position.title.get(language__title=language).title}', callback_data=f'{position.id}'))
+
+    end_buttons = BuildMenu(
+        end_buttons,
+        1,
+        footer_buttons=[
+            InlineKeyboardButton(button.title, callback_data=f'back')]
+        )
+
+    keyboard = InlineKeyboardMarkup()
+    keyboard.inline_keyboard = end_buttons
+
+    return keyboard

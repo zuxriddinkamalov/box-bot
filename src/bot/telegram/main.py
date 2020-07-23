@@ -172,6 +172,13 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
             text = Messages(user)['main_menu']
             markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
             await bot.send_message(user, text, reply_markup=markup)
+            
+
+
+    
+    
+
+            
 
 
 @dp.callback_query_handler(state=states.User.Category)
@@ -737,6 +744,114 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
         text = Messages(user)['main_menu']
         markup = keyboards.MainMenuKeyboard(user, Client.get_cart_count(user))
         await bot.send_message(user, text, reply_markup=markup)
+        
+    if "accept_order_channel" in data:
+        manager_chat_id = user
+        order_num = int(data.replace('accept_order_channel ', ''))
+
+        order = Client.get_order(order_num)
+        if order.selected_branch.managers.all().filter(chat_id=manager_chat_id).count() != 0:
+
+            order.manager = Client.get_user(manager_chat_id)
+            order.status = ClientModule.core_models.OrderStatus.objects.get(pk=2)
+            order.save()
+            
+            user = order.user.chat_id
+
+            text = Messages(user)['in_porgress_cooking']
+            markup = None
+            await bot.send_message(user, text, reply_markup=markup)
+            
+            if order.delivery:
+                markup = keyboards.DeliveryStatusKeyboard(order.id)
+            else:
+                markup = keyboards.SelfStatusKeyboard(order.id)
+                
+            await bot.edit_message_reply_markup(order.selected_branch.channel,
+                                                message_id=callback_query.message.message_id,
+                                                reply_markup=markup)
+        else:
+            
+            await bot.answer_callback_query(callback_query.id, text='У вас нет доступа к изменению статуса')
+        return
+    
+    if 'to_delivery' in data:
+        manager_chat_id = user
+        order_num = int(data.replace('to_delivery ', ''))
+
+        order = Client.get_order(order_num)
+        if order.selected_branch.managers.all().filter(chat_id=manager_chat_id).count() != 0:
+
+            order.status = ClientModule.core_models.OrderStatus.objects.get(pk=3)
+            order.save()
+            
+            user = order.user.chat_id
+
+            text = Messages(user)['in_porgress_to_delivery']
+            markup = None
+            await bot.send_message(user, text, reply_markup=markup)
+            await bot.answer_callback_query(callback_query.id, text='Заказ передан на доставку')
+            
+            markup = keyboards.EndStatusKeyboard(order.id)
+            await bot.edit_message_reply_markup(order.selected_branch.channel,
+                                                message_id=callback_query.message.message_id,
+                                                reply_markup=markup)
+        else:
+            
+            await bot.answer_callback_query(callback_query.id, text='У вас нет доступа к изменению статуса')
+        return    
+    
+    if 'to_self' in data:
+        manager_chat_id = user
+        order_num = int(data.replace('to_self ', ''))
+
+        order = Client.get_order(order_num)
+        if order.selected_branch.managers.all().filter(chat_id=manager_chat_id).count() != 0:
+
+            order.status = ClientModule.core_models.OrderStatus.objects.get(pk=3)
+            order.save()
+            
+            user = order.user.chat_id
+
+            text = Messages(user)['in_porgress_to_self']
+            markup = None
+            await bot.send_message(user, text, reply_markup=markup)
+            await bot.answer_callback_query(callback_query.id, text='Заказ передан на самовывоз')
+            
+            
+            markup = keyboards.EndStatusKeyboard(order.id)
+            await bot.edit_message_reply_markup(order.selected_branch.channel,
+                                                message_id=callback_query.message.message_id,
+                                                reply_markup=markup)
+        else:
+            
+            await bot.answer_callback_query(callback_query.id, text='У вас нет доступа к изменению статуса')
+        return 
+    
+    if 'to_end' in data:
+        manager_chat_id = user
+        order_num = int(data.replace('to_end ', ''))
+
+        order = Client.get_order(order_num)
+        if order.selected_branch.managers.all().filter(chat_id=manager_chat_id).count() != 0:
+
+            order.status = ClientModule.core_models.OrderStatus.objects.get(pk=4)
+            order.active = False
+            order.save()
+            
+            user = order.user.chat_id
+
+            await bot.answer_callback_query(callback_query.id, text='Заказ завершен')
+
+            
+            markup = None
+            await bot.edit_message_reply_markup(order.selected_branch.channel,
+                                                message_id=callback_query.message.message_id,
+                                                reply_markup=markup)
+        else:
+            
+            await bot.answer_callback_query(callback_query.id, text='У вас нет доступа к изменению статуса')
+        return 
 
 
 @dp.callback_query_handler(state=states.User.EditQuantity)
@@ -917,13 +1032,27 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
         async with state.proxy() as data:
 
             data['delivery'] = False
+            
+        br = Client.get_branches()
+        if br.count() != 1:
+            
+            text = Messages(user)['set_branch']
+        
+            await states.User.SetBranch.set()
 
-        text = Messages(user)['time_set_self']
+            markup = keyboards.BranchSelectKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
 
-        await states.User.Time.set()
+        else:
+            
+            text = Messages(user)['time_set_self']
 
-        markup = keyboards.TimeKeyboard(user)
-        await bot.send_message(user, text, reply_markup=markup)
+            await states.User.Time.set()
+
+            markup = keyboards.TimeKeyboard(user)
+            await bot.send_message(user, text, reply_markup=markup)
+        
+        return      
 
     if button_code == 'delivery':
 
@@ -937,6 +1066,39 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
 
         markup = keyboards.LocationKeyboard(user)
         await bot.send_message(user, text, reply_markup=markup)
+
+
+@dp.callback_query_handler(state=states.User.SetBranch)
+async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
+    user = int(callback_query.from_user.id)
+    data = callback_query.data
+
+    await bot.answer_callback_query(callback_query.id)
+    await bot.delete_message(user, callback_query.message.message_id)
+    
+    print(data)
+
+    if "back" in data:
+
+        text = Messages(user)['delivery']
+        await states.User.Delivery.set()
+
+        markup = keyboards.DeliveryKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+
+        return
+
+    branch_number = int(data)
+    async with state.proxy() as data:
+
+        data['branch'] = branch_number
+
+    text = Messages(user)['time_set_self']
+
+    await states.User.Time.set()
+
+    markup = keyboards.TimeKeyboard(user)
+    await bot.send_message(user, text, reply_markup=markup)
 
 
 @dp.callback_query_handler(state=states.User.Time)
@@ -1335,12 +1497,22 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
         
         if not card:
             
-            text = Messages(user)['order_accepted']
             
             async with state.proxy() as data:
+                
+                text = GenerateOrder(user, data, True)
+                order = Client.create_order(user, data)
+                markup = keyboards.OrderAcceptOrRejectKeyboard(order.id)
+                
+                if order.delivery:
+                    await bot.send_message(order.selected_branch.channel, text, reply_markup=None)
+                    await bot.send_location(order.selected_branch.channel, latitude=order.latitude, longitude=order.longitude, reply_markup=markup)
+                else:
+                    await bot.send_message(order.selected_branch.channel, text, reply_markup=markup)
+                    
 
-                Client.create_order(user, data)
-
+            text = Messages(user)['order_accepted']
+            
             markup = None
             await bot.send_message(user, text, reply_markup=markup)
 
@@ -1351,6 +1523,18 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
             await bot.send_message(user, text, reply_markup=markup)
             
         else:
+            
+            async with state.proxy() as data:
+                
+                text = GenerateOrder(user, data, True)
+                order = Client.create_order(user, data)
+                markup = keyboards.OrderAcceptOrRejectKeyboard(order.id)
+                
+                if order.delivery:
+                    await bot.send_message(order.selected_branch.channel, text, reply_markup=None)
+                    await bot.send_location(order.selected_branch.channel, latitude=order.latitude, longitude=order.longitude, reply_markup=markup)
+                else:
+                    await bot.send_message(order.selected_branch.channel, text, reply_markup=markup)
             
             text = Messages(user)['order_accepted']
             
@@ -1422,6 +1606,19 @@ async def checkout(pre_checkout_query: types.PreCheckoutQuery):
 async def got_payment(message: types.Message, state: FSMContext):
     
     user = int(message.chat.id)
+    
+    async with state.proxy() as data:
+                
+        text = GenerateOrder(user, data, True)
+        order = Client.create_order(user, data)
+        markup = keyboards.OrderAcceptOrRejectKeyboard(order.id)
+        
+        if order.delivery:
+            await bot.send_message(order.selected_branch.channel, text, reply_markup=None)
+            await bot.send_location(order.selected_branch.channel, latitude=order.latitude, longitude=order.longitude, reply_markup=markup)
+        else:
+            await bot.send_message(order.selected_branch.channel, text, reply_markup=markup)
+                    
     text = Messages(user)['order_accepted']
     
     async with state.proxy() as data:
@@ -1962,15 +2159,12 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
         async with state.proxy() as data:
 
             data['delivery'] = False
+            
+        text = Messages(user)['set_branch']
+        
+        await states.User.EditBranch.set()
 
-        text = Messages(user)['info_updated']
-        markup = None
-        await bot.send_message(user, text, reply_markup=markup)
-
-        await states.User.OrderEdit.set()
-
-        text = Messages(user)['order_edit']
-        markup = keyboards.OrderEditKeyboard(user)
+        markup = keyboards.BranchSelectKeyboard(user)
         await bot.send_message(user, text, reply_markup=markup)
         
         return
@@ -1987,6 +2181,36 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
 
         markup = keyboards.LocationKeyboard(user)
         await bot.send_message(user, text, reply_markup=markup)
+        
+        
+@dp.callback_query_handler(state=states.User.EditBranch)
+async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
+    user = int(callback_query.from_user.id)
+    data = callback_query.data
+
+    await bot.answer_callback_query(callback_query.id)
+    await bot.delete_message(user, callback_query.message.message_id)
+
+    if "back" in data:
+
+        text = Messages(user)['delivery']
+        await states.User.DeliveryEdit.set()
+
+        markup = keyboards.DeliveryKeyboard(user)
+        await bot.send_message(user, text, reply_markup=markup)
+
+        return
+
+    branch_number = int(data)
+    async with state.proxy() as data:
+
+        data['branch'] = branch_number
+
+    await states.User.OrderEdit.set()
+
+    text = Messages(user)['order_edit']
+    markup = keyboards.OrderEditKeyboard(user)
+    await bot.send_message(user, text, reply_markup=markup)
         
         
 @dp.message_handler(state=states.User.LocationEdit)
@@ -2036,6 +2260,118 @@ async def location_edit_handler(message: types.Message, state: FSMContext):
     await bot.send_message(user, text, reply_markup=markup)
     
     return
+
+# @dp.callback_query_handler(state=states.User.MainMenu)
+# async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
+#     user = int(callback_query.from_user.id)
+#     data = callback_query.data
+#     print(data)
+#     if "accept_order_channel" in data:
+#         manager_chat_id = user
+#         order_num = int(data.replace('accept_order_channel ', ''))
+
+#         order = get_order(order_num)
+#         if order.branch.managers.all().filter(chat_id=manager_chat_id).count() != 0:
+
+#             order.manager = Client.get_user(manager_chat_id)
+#             order.status = Client.core_models.OrderStatus.objects.get(pk=2)
+#             order.save()
+            
+#             user = order.user.chat_id
+
+#             text = Messages(user)['in_porgress_cooking']
+#             markup = None
+#             await bot.send_message(user, text, reply_markup=markup)
+            
+#             if order.delivery:
+#                 markup = keyboards.DeliveryStatusKeyboard(order.id)
+#             else:
+#                 markup = keyboards.SelfStatusKeyboard(order.id)
+                
+#             await bot.edit_message_reply_markup(order.branch.channel,
+#                                                 message_id=callback_query.message.message_id,
+#                                                 reply_markup=markup)
+#         else:
+            
+#             await bot.answer_callback_query(callback_query.id, text='У вас нет доступа к изменению статуса')
+#         return
+    
+#     if 'to_delivery' in data:
+#         manager_chat_id = user
+#         order_num = int(data.replace('to_delivery ', ''))
+
+#         order = get_order(order_num)
+#         if order.branch.managers.all().filter(chat_id=manager_chat_id).count() != 0:
+
+#             order.status = Client.core_models.OrderStatus.objects.get(pk=3)
+#             order.save()
+            
+#             user = order.user.chat_id
+
+#             text = Messages(user)['in_porgress_to_delivery']
+#             markup = None
+#             await bot.send_message(user, text, reply_markup=markup)
+#             await bot.answer_callback_query(callback_query.id, text='Заказ передан на доставку')
+            
+#             markup = keyboards.EndStatusKeyboard(order.id)
+#             await bot.edit_message_reply_markup(order.branch.channel,
+#                                                 message_id=callback_query.message.message_id,
+#                                                 reply_markup=markup)
+#         else:
+            
+#             await bot.answer_callback_query(callback_query.id, text='У вас нет доступа к изменению статуса')
+#         return    
+    
+#     if 'to_self' in data:
+#         manager_chat_id = user
+#         order_num = int(data.replace('to_self ', ''))
+
+#         order = get_order(order_num)
+#         if order.branch.managers.all().filter(chat_id=manager_chat_id).count() != 0:
+
+#             order.status = Client.core_models.OrderStatus.objects.get(pk=3)
+#             order.save()
+            
+#             user = order.user.chat_id
+
+#             text = Messages(user)['in_porgress_to_self']
+#             markup = None
+#             await bot.send_message(user, text, reply_markup=markup)
+#             await bot.answer_callback_query(callback_query.id, text='Заказ передан на самовывоз')
+            
+            
+#             markup = keyboards.EndStatusKeyboard(order.id)
+#             await bot.edit_message_reply_markup(order.branch.channel,
+#                                                 message_id=callback_query.message.message_id,
+#                                                 reply_markup=markup)
+#         else:
+            
+#             await bot.answer_callback_query(callback_query.id, text='У вас нет доступа к изменению статуса')
+#         return 
+    
+#     if 'to_end' in data:
+#         manager_chat_id = user
+#         order_num = int(data.replace('to_end ', ''))
+
+#         order = get_order(order_num)
+#         if order.branch.managers.all().filter(chat_id=manager_chat_id).count() != 0:
+
+#             order.status = Client.core_models.OrderStatus.objects.get(pk=4)
+#             order.active = False
+#             order.save()
+            
+#             user = order.user.chat_id
+
+#             await bot.answer_callback_query(callback_query.id, text='Заказ завершен')
+            
+#             markup = None
+#             await bot.edit_message_reply_markup(order.branch.channel,
+#                                                 message_id=callback_query.message.message_id,
+#                                                 reply_markup=markup)
+#         else:
+            
+#             await bot.answer_callback_query(callback_query.id, text='У вас нет доступа к изменению статуса')
+#         return 
 
 
 async def shutdown(dispatcher: Dispatcher):

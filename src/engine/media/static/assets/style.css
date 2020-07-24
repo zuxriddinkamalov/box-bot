@@ -1,0 +1,328 @@
+* {margin: 0; padding: 0;}
+
+.tree ul {
+    padding-top: 20px; position: relative;
+	
+	transition: all 0.5s;
+	-webkit-transition: all 0.5s;
+	-moz-transition: all 0.5s;
+}
+
+.tree li {
+	float: left; text-align: center;
+	list-style-type: none;
+	position: relative;
+	padding: 20px 5px 0 5px;
+	
+	transition: all 0.5s;
+	-webkit-transition: all 0.5s;
+	-moz-transition: all 0.5s;
+}
+
+/*We will use ::before and ::after to draw the connectors*/
+
+.tree li::before, .tree li::after{
+	content: '';
+	position: absolute; top: 0; right: 50%;
+	border-top: 1px solid #ccc;
+	width: 50%; height: 20px;
+}
+.tree li::after{
+	right: auto; left: 50%;
+	border-left: 1px solid #ccc;
+}
+
+/*We need to remove left-right connectors from elements without 
+any siblings*/
+.tree li:only-child::after, .tree li:only-child::before {
+	display: none;
+}
+
+/*Remove space from the top of single children*/
+.tree li:only-child{ padding-top: 0;}
+
+/*Remove left connector from first child and 
+right connector from last child*/
+.tree li:first-child::before, .tree li:last-child::after{
+	border: 0 none;
+}
+/*Adding back the vertical connector to the last nodes*/
+.tree li:last-child::before{
+	border-right: 1px solid #ccc;
+	border-radius: 0 5px 0 0;
+	-webkit-border-radius: 0 5px 0 0;
+	-moz-border-radius: 0 5px 0 0;
+}
+.tree li:first-child::after{
+	border-radius: 5px 0 0 0;
+	-webkit-border-radius: 5px 0 0 0;
+	-moz-border-radius: 5px 0 0 0;
+}
+
+/*Time to add downward connectors from parents*/
+.tree ul ul::before{
+	content: '';
+	position: absolute; top: 0; left: 50%;
+	border-left: 1px solid #ccc;
+	width: 0; height: 20px;
+}
+
+.tree li a{
+	border: 1px solid #ccc;
+	padding: 5px 10px;
+	text-decoration: none;
+	color: #666;
+	font-family: arial, verdana, tahoma;
+	font-size: 11px;
+	display: inline-block;
+	
+	border-radius: 5px;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	
+	transition: all 0.5s;
+	-webkit-transition: all 0.5s;
+	-moz-transition: all 0.5s;
+}
+
+/*Time for some hover effects*/
+/*We will apply the hover effect the the lineage of the element also*/
+.tree li a:hover, .tree li a:hover+ul li a {
+	background: #c8e4f8; color: #000; border: 1px solid #94a0b4;
+}
+/*Connector styles on hover*/
+.tree li a:hover+ul li::after, 
+.tree li a:hover+ul li::before, 
+.tree li a:hover+ul::before, 
+.tree li a:hover+ul ul::before{
+	border-color: #e3374d;
+}
+
+.messageBox{
+	min-width: 50px;
+	min-height: 10px;
+
+    width: auto;
+	height: auto;
+	padding: 2px;
+}
+
+.start{
+	background-color: rgb(183, 255, 176) !important;
+}
+
+.question{
+	background-color: rgb(197, 184, 255) !important;
+}
+
+.finish{
+	background-color: rgb(255, 195, 187) !important;
+}
+
+.number{
+	font-size: 14pt;
+}
+
+.treeside{
+	width: 70%;
+	height: 100%;
+	padding-left: 50px;
+
+
+}
+
+.messageside{
+	width: 30%;
+	height: 100%;
+	padding: 0px;
+}
+
+.colorblock{
+	padding: 5px;
+	margin-top: 10px;
+	/* width: 70px; */
+	text-align: center;
+	display: inline-block;
+}
+
+.currentMessage{
+	width: 500px;
+	height: 700px;
+	/* border: 1px solid black; */
+	margin-top: 20px;
+}
+
+.form-control{
+	margin-top: 10px;
+}
+
+.currentMessageCounter{
+	display: inline-block;
+	width: 100px;
+	text-align: right;
+	margin-right: 5px;
+}
+
+.sticky{
+	position: -webkit-sticky;
+	position: sticky;
+	top: 0;
+}
+
+.inline-block{
+	display: inline-block;
+	margin-right: 5px;
+}
+
+body{
+	font-family: "Montserrat";
+}
+
+.checkpoint{
+	display: inline-block;
+	height: 25px;
+	width: 25px;
+	border: 1px solid #94a0b4;
+	margin-right: 10px;
+	margin-top: 10px;
+	font-size: 14px;
+	text-align: center;
+	padding-top: 2px;	
+	border-radius: 5px;
+
+	cursor: pointer;
+}
+
+
+.add:hover{
+	background-color: #e4e4e4;
+}
+
+.questionChoice{
+	height: 50px;
+	min-width: 250px;
+	border-radius: 5px;
+	border: 1px solid  #94a0b4;
+	margin-top: 10px;
+	padding: 10px;
+	display: inline-block;
+}
+
+.choices{
+	margin-top: 10px;
+}
+
+.messageNumber {
+	width: 100px !important;
+	min-width: 100px;
+}
+
+.none{
+	display: none;
+}
+
+
+
+.preloader {
+	background: linear-gradient(90deg, #FF4E50 10%, #F9D423 90%);
+	overflow: hidden;
+	position: fixed;
+	left: 0;
+	top: 0;
+	right:0;
+	bottom:0;
+	z-index: 100000;
+  }
+
+  .prePreloader{
+	height: 40px;
+	width: 40px;
+	position: absolute;
+	left: 50%;
+	margin-left: -20px;
+	top: 50%;
+	margin-top: -20px;
+  }
+  .prePreloader:before,
+  .prePreloader:after {
+	content: "";
+	height: 40px;
+	width: 40px;
+	border: 8px solid rgba(255,255,255,.5);
+	border-radius: 10px;
+	position: absolute;
+	top: 0;
+  }
+  .prePreloader:before {
+	animation: animate 2s infinite linear;
+  }
+  @keyframes animate {
+	0% {
+	  transform: rotate(0) skew(0);
+	}
+	
+	100% {
+	  transform: rotate(180deg) skew(360deg);
+	}
+  }
+  .prePreloader:after {
+	animation: animate2 2s infinite linear;
+  }
+  @keyframes animate2 {
+	0% {
+	  transform: rotate(0) skew(0);
+	}
+	
+	100% {
+	  transform: rotate(-180deg) skew(-360deg);
+	}
+  }
+
+
+.files input {
+    outline: 2px dashed #92b0b3;
+    outline-offset: -10px;
+    -webkit-transition: outline-offset .15s ease-in-out, background-color .15s linear;
+    transition: outline-offset .15s ease-in-out, background-color .15s linear;
+    padding: 120px 0px 85px 35%;
+    text-align: center !important;
+    margin: 0;
+    width: 100% !important;
+}
+
+.files input:focus{     outline: 2px dashed #92b0b3;  outline-offset: -10px;
+    -webkit-transition: outline-offset .15s ease-in-out, background-color .15s linear;
+    transition: outline-offset .15s ease-in-out, background-color .15s linear; border:1px solid #92b0b3;
+ }
+
+.files{ position:relative}
+
+.files:after {  pointer-events: none;
+    position: absolute;
+    top: 60px;
+    left: 0;
+    width: 50px;
+    right: 0;
+    height: 56px;
+    content: "";
+    background-image: url(https://image.flaticon.com/icons/png/128/109/109612.png);
+    display: block;
+    margin: 0 auto;
+    background-size: 100%;
+    background-repeat: no-repeat;
+}
+.color input{ background-color:#f1f1f1;}
+.files:before {
+    position: absolute;
+    bottom: 10px;
+    left: 0;  pointer-events: none;
+    width: 100%;
+    right: 0;
+    height: 57px;
+    display: block;
+    margin: 0 auto;
+    color: #2ea591;
+    font-weight: 600;
+    text-transform: capitalize;
+    text-align: center;
+}

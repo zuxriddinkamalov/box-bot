@@ -1,0 +1,155 @@
+{% load static %}
+{% load extratags %}
+{% load mptt_tags %}
+
+
+<html>
+    
+<head>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+
+    <link rel="stylesheet" href="/media{% static 'assets/style.css'%}">
+    <script src="/media{% static 'assets/main.js'%}">
+	
+    // <!------ Include the above in your HEAD tag ---------->
+</head>
+
+<body>
+    
+	<script>
+		$(document).ready(function(){
+		  $('[data-toggle="tooltip"]').tooltip();
+		});
+		</script>
+		<div class="preloader">
+   <div class="prePreloader"></div>
+</div>
+<div class="row">
+	<div class="col-sm-8 treeside sticky">
+		<div>
+			<h1 style="margin-top: 20px; display: inline-block;" >{{ storyline.title }}</h1>
+			<button class="btn" data-toggle="tooltip" title="Изменить"><i class="fa fa-edit"></i></button>
+			<button class="btn" data-toggle="tooltip" data-placement="right" title="Удалить"><i class="fa fa-trash"></i></button>
+		</div>
+		<p>{{ storyline.description }}</p>
+		
+		<hr style="margin-top: 20px;">
+		<div class="colorblock start">Начало</div>
+		<div class="colorblock question">Вопрос</div>
+		<div class="colorblock finish">Конец</div>
+		<div class="storylineChekpoints" id="storylineChekpoints">
+			<br>
+			Checkpoints
+			<br>
+			{% for checkpoint in storyline.checkpoints.all %}
+				<div class="checkpoint">
+					{{ checkpoint.id }}
+				</div>
+				
+			{% endfor %}
+			<div class="checkpoint add" data-toggle="tooltip" data-placement="right" title="Добавить checkpoint" id="addCheckpoint">
+				+
+			</div>
+		</div>
+		<div class="tree">
+			<ul class="root">
+				{% recursetree messages %}
+					<li>
+						<a href="#" onclick="showMessage({{ node.id }})" class="{% if node.isQuestion %} question{% endif %}{% if node.isStart %} start{% endif %}{% if node.isFinish %} finish{% endif %}">
+							<div class="messageBox">
+								<span class="number">{{ node.id }}</span>
+							</div>
+						</a>
+						{% if not node.is_leaf_node %}
+							<ul class="children">
+								{{ children }}
+							</ul>
+						{% endif %}
+
+					</li>
+				{% endrecursetree %}
+			</ul>
+		</div>
+	</div>
+	<div class="col-sm-4 messageside sticky">
+		{% for message in messages %}
+			<div class="currentMessage form-group none" id="message{{message.id}}">
+				<h1>Сообщение <span><input class="currentMessageCounter" id="currentMessageCounter" value="{{ message.id }}"></span>/{{messages|length}}</h1>
+				<hr>
+				<div class="custom-control custom-checkbox mb-3 inline-block">
+					<input type="checkbox" class="custom-control-input" id="isStart" name="isStart" {% if message.isStart %}checked{% endif %}>
+					<label class="custom-control-label" for="isStart">Начало</label>
+				</div>
+				<div class="custom-control custom-checkbox mb-3 inline-block">
+					<input type="checkbox" class="custom-control-input" id="isQuestion" name="isQuestion" {% if message.isQuestion %}checked{% endif %}>
+					<label class="custom-control-label" for="isQuestion">Вопрос</label>
+				</div>
+				<div class="custom-control custom-checkbox mb-3 inline-block">
+					<input type="checkbox" class="custom-control-input" id="isFinish" name="isFinish" {% if message.isFinish %}checked{% endif %}>
+					<label class="custom-control-label" for="isFinish">Конец</label>
+				</div>
+				<div class="content">
+					<textarea id="messageText" class="form-control" placeholder="Текст сообщения">{{ message.content.text }}</textarea>
+					<br>
+					<div class="form-group files">
+						<input type="file" class="form-control" multiple="">
+					</div>
+				</div>
+				<div class="nextMessages" >
+					<hr>
+					Следующее сообщение
+					<br>
+					<div id="next">
+						{% for nextMessage in message.next.all %}
+						<div class="inline-block">
+							<input class="questionChoice messageNumber" placeholder="#" data-toggle="tooltip"  title="Номер следующего сообщения" value="{{ nextMessage.id }}">
+						</div>
+						{% endfor %}
+					</div>				
+					<hr>
+				</div>
+				{% if message.isQuestion %}
+				<div class="choices">
+				{% else %}
+				<div class="choices none">
+				{% endif %}
+					<hr>
+					Варианты ответов
+					<br>
+					<div id="choices">
+						{% for choice in message.choices.all %}
+						<div>
+							<input class="questionChoice" placeholder="Ответ" value="{{ choice.title }}">
+							<input class="questionChoice messageNumber" placeholder="#" data-toggle="tooltip"  title="Номер следующего сообщения" value="{{ choice.message.id }}">
+						</div>
+						{% endfor %}
+						<div class="checkpoint add" data-toggle="tooltip" data-placement="right" title="Добавить ответ" id="addCheckpoint">
+							+
+						</div>
+					</div>				
+					<hr>
+				</div>
+				<div>
+					<hr>
+					Задержка перед отправкой
+					<br>
+					<div>
+						<input class="questionChoice messageNumber" placeholder="1000" data-toggle="tooltip"  title="мс" value="{{ message.delay }}">
+					</div>
+					<hr>
+
+				</div>
+			</div>
+		{% endfor %}
+	</div>
+</div>
+
+</body>
+
+</html>

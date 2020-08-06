@@ -1,6 +1,5 @@
 {% extends 'web/base.html' %}
-{% load widget_tweaks %}
-{% load crispy_forms_tags %}
+
 {% block content %}
   <div class="wrapper ">
     <div class="sidebar" data-color="purple" data-background-color="white" data-image="../assets/img/sidebar-1.jpg">
@@ -20,13 +19,13 @@
                 <p>Dashboard</p>
               </a>
             </li>
-            <li class="nav-item ">
+            <li class="nav-item active">
               <a class="nav-link" href="/orders/">
                 <i class="material-icons">attach_money</i>
                 <p>Заказы</p>
               </a>
             </li>
-            <li class="nav-item active ">
+            <li class="nav-item  ">
               <a class="nav-link" href="/ru/categories/">
                 <i class="material-icons">layers</i>
                 <p>Категории</p>
@@ -84,7 +83,7 @@
       <nav class="navbar navbar-expand-lg navbar-transparent navbar-absolute fixed-top ">
         <div class="container-fluid">
           <div class="navbar-wrapper">
-            <a class="navbar-brand" href="javascript:;">Редактирование Категории</a>
+            <a class="navbar-brand" href="javascript:;">Заказ</a>
           </div>
           <button class="navbar-toggler" type="button" data-toggle="collapse" aria-controls="navigation-index" aria-expanded="false" aria-label="Toggle navigation">
             <span class="sr-only">Toggle navigation</span>
@@ -121,80 +120,96 @@
             <div class="col-md-8">
               <div class="card">
                 <div class="card-header card-header-primary">
-                  <h4 class="card-title">Категория</h4>
-                  <p class="card-category">Редактирование</p>
-                  
+                  <h4 class="card-title">Заказ №{{ order.id }}</h4>
                 </div>
                 <div class="card-body">
-                  <form method="post">
-                  {% csrf_token %}
-                  {% crispy form %}
-                  </form>
-                  {% comment "Optional note" %}
-                    <div class="row">
-                      <div class="col-md-6">
-                        <div class="form-check">
-                          <label class="form-check-label">
-                              {% if category.active %}
-                                <input class="form-check-input" id='cat_active' type="checkbox" value="True" checked>
-                              {% else %}
-                                <input class="form-check-input" id="cat_active" type="checkbox" value="False">
-                              {% endif %}
-
-                              Активность
-                              <span class="form-check-sign">
-                                  <span class="check"></span>
-                              </span>
-                          </label>
-                      </div>
-                      </div>
-                      
-                    </div>
                     <div class="row">
                       <div class="col-md-6">
                         <div class="form-group">
-                          <label class="bmd-label-floating">Порядковый номер</label>
-                          <input type="text" class="form-control" id="cat_order" value='{{ category.order }}'>
+                          <h6>Клиент</h6>
+                          <label class="bmd-label-floating">{{ order.name }}</label>
                         </div>
                       </div>
-                      
-                    </div>
-                    <div class="row">
-                      <div class="col-md-12">
+                      <div class="col-md-6">
                         <div class="form-group">
-                          <div class="form-group">
-                            <label class="bmd-label-floating"> Описание</label>
-                            <textarea class="form-control" id="cat_description" rows="5">{{ category.description }}</textarea>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-md-12">
-                        <div class="form-group">
-                          <div class="form-group">
-                            <div class="fileinput fileinput-new text-center" data-provides="fileinput">
-                              <div class="fileinput-new thumbnail img-raised">
-                                  <img class="col-md-12" id='cat_image' src="/{{ category.photo.photo.url }}" rel="nofollow" alt="...">
-                              </div>
-                              <!-- <div class="fileinput-preview fileinput-exists thumbnail img-raised"></div> -->
-                              <div>
-                                  <span class="btn btn-raised btn-round btn-default btn-file">
-                                      <!-- <span class="fileinput-exists">Change</span> -->
-                                      <input type="file" id="cat_image_file" name="..." id="cat_image_input"/>
-                                      <span class="fileinput-new">Выбрать</span>
-                                  </span>
-                              </div>
-                          </div>
-                          </div>
+                          <h6>Телефон</h6>
+                          <label class="bmd-label-floating"><a href='tel: +{{ order.phone }}'>+{{ order.phone }}</a></label>
                         </div>
                       </div>
                     </div>
                     
-                    <button onclick='EditCat({{ category.id }})' class="btn btn-primary pull-right">Сохранить</button>
-                    <button data-toggle="modal" data-target="#exampleModal"  class="btn btn-primary btn-link pull-right">Удалить</button>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <h6>Доставка</h6>
+                          {% if order.delivery %}
+                                <label class="bmd-label-floating">Нет</label>
+                              {% else %}
+                                <label class="bmd-label-floating">Да</label>
+                              {% endif %}
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <h6>Время</h6>
+                          <label class="bmd-label-floating">{{ order.time }}</label>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <h6>Оплата</h6>
+                          {% if order.card %}
+                              <label class="bmd-label-floating">{{ order.paysystem.title }}</label>
+                            {% else %}
+                              <label class="bmd-label-floating">Наличные</label>
+                            {% endif %}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <h6>Стоимость</h6>
+                          <label class="bmd-label-floating">{{ order.cart.get_price }} сум</label>
+                        </div>
+                      </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <h6>Активность</h6>
+                              {% if order.active %}
+                                <label class="bmd-label-floating"><i class="material-icons">check_box</i></label>
+                              {% else %}
+                                <label class="bmd-label-floating"><i class="material-icons">check_box_outline_blank</i></label>
+                              {% endif %}
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <h6>Статус</h6>
+                          <label class="bmd-label-floating">{{ order.status.title }}</label>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <h6>Филиал</h6>
+                          <label class="bmd-label-floating">{{ order.selected_branch.title.all.0.title }}</label>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <h6>Менеджер</h6>
+                          <label class="bmd-label-floating">{{ order.manager }}</label>
+                        </div>
+                      </div>
+                    </div>
                     <div class="clearfix"></div>
-                    {% endcomment %}
                 </div>
               </div>
             </div>

@@ -440,7 +440,7 @@ class Category(models.Model):
 
     code = models.CharField(
         "Unique Code",
-        default=None,
+        default=1,
         max_length=255,
         blank=False,
         null=False
@@ -485,6 +485,7 @@ class Category(models.Model):
         if translate:
 
             if self.pk is None:
+                self.code = str(hashlib.md5(self.title.encode('utf-8')).hexdigest())
 
                 for language in Language.objects.all():
 

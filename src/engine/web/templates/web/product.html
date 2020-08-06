@@ -25,13 +25,13 @@
                 <p>Заказы</p>
               </a>
             </li>
-            <li class="nav-item active ">
+            <li class="nav-item ">
               <a class="nav-link" href="/ru/categories/">
                 <i class="material-icons">layers</i>
                 <p>Категории</p>
               </a>
             </li>
-            <li class="nav-item ">
+            <li class="nav-item active">
               <a class="nav-link" href="/ru/products/">
                 <i class="material-icons">fastfood</i>
                 <p>Товары</p>
@@ -82,8 +82,8 @@
       <nav class="navbar navbar-expand-lg navbar-transparent navbar-absolute fixed-top ">
         <div class="container-fluid">
           <div class="navbar-wrapper">
-            <a class="navbar-brand" href="javascript:;">Категории</a>
-            <a href="/{{2nd_lan}}/categories/">
+            <a class="navbar-brand" href="javascript:;">Товары</a>
+            <a href="/{{2nd_lan}}/products/">
               <button class="btn btn-primary btn-round">
               <i class="material-icons">language</i> {{2nd_lan}}
             </button></a>
@@ -123,9 +123,9 @@
               <div class="card">
                 <div class="card-header card-header-primary card-header-icon">
                   <div class="card-icon">
-                    <i class="material-icons">layers</i>
+                    <i class="material-icons">fastfood</i>
                   </div>
-                  <h4 class="card-title ">Категории</h4>
+                  <h4 class="card-title ">Товары</h4>
                   <br>
                   <a href="/categories/new/">
                     <button class="btn btn-primary btn-round">
@@ -144,6 +144,12 @@
                           Описание
                         </th>
                         <th>
+                          Категория
+                        </th>
+                        <th>
+                          Цена
+                        </th>
+                        <th>
                           Активность
                         </th>
                         <th>
@@ -151,26 +157,34 @@
                         </th>
                       </thead>
                       <tbody>
-                        {% for category in all_categories %}
+                        {% for product in all_products %}
                          
                         <tr>
                           <td>
-                            <a href="/{{category.language.title}}/categories/{{category.id}}/edit/">
-                              {{category.title}}
+                            <a href="/{{product.language.title}}/products/{{product.id}}/edit/">
+                              {{product.title}}
                             </a>
                           </td>
                           <td>
-                            {{category.description|truncatewords:10 }}
+                            {{product.description|truncatewords:10 }}
                           </td>
                           <td>
-                            {% if category.active %}
+                            <a href="/{{product.language.title}}/categories/{{product.category.id}}/edit/">
+                            {{product.category.title}}
+                            </a>
+                          </td>
+                          <td>
+                            {{product.price}}
+                          </td>
+                          <td>
+                            {% if product.active %}
                               <i class="material-icons">check_box</i>
                             {% else %}
                               <i class="material-icons">check_box_outline_blank</i>
                             {% endif %}
                           </td>
                           <td>
-                            {{category.order}}
+                            {{product.order}}
                           </td>
                         </tr>
                         {% endfor %}
@@ -180,7 +194,7 @@
                 </div>
                 <div class="card-footer">
                   <div class="stats">
-                    <i class="material-icons">layers</i> Всего {{all_categories|length}}
+                    <i class="material-icons">fastfood</i> Всего {{all_products|length}}
                   </div>
                 </div>
               </div>

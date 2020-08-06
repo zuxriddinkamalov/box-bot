@@ -40,8 +40,12 @@ INSTALLED_APPS = [
     'mptt',
     'core',
     'telegram',
-    'web'
+    'web',
+    'widget_tweaks',
+    'crispy_forms'
 ]
+
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

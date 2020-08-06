@@ -19,13 +19,13 @@
                 <p>Dashboard</p>
               </a>
             </li>
-            <li class="nav-item ">
+            <li class="nav-item active">
               <a class="nav-link" href="/orders/">
                 <i class="material-icons">attach_money</i>
                 <p>Заказы</p>
               </a>
             </li>
-            <li class="nav-item active ">
+            <li class="nav-item ">
               <a class="nav-link" href="/ru/categories/">
                 <i class="material-icons">layers</i>
                 <p>Категории</p>
@@ -82,12 +82,7 @@
       <nav class="navbar navbar-expand-lg navbar-transparent navbar-absolute fixed-top ">
         <div class="container-fluid">
           <div class="navbar-wrapper">
-            <a class="navbar-brand" href="javascript:;">Категории</a>
-            <a href="/{{2nd_lan}}/categories/">
-              <button class="btn btn-primary btn-round">
-              <i class="material-icons">language</i> {{2nd_lan}}
-            </button></a>
-
+            <a class="navbar-brand" href="javascript:;">Заказы</a>
           </div>
           <button class="navbar-toggler" type="button" data-toggle="collapse" aria-controls="navigation-index" aria-expanded="false" aria-label="Toggle navigation">
             <span class="sr-only">Toggle navigation</span>
@@ -123,54 +118,84 @@
               <div class="card">
                 <div class="card-header card-header-primary card-header-icon">
                   <div class="card-icon">
-                    <i class="material-icons">layers</i>
+                    <i class="material-icons">attach_money</i>
                   </div>
-                  <h4 class="card-title ">Категории</h4>
-                  <br>
-                  <a href="/categories/new/">
-                    <button class="btn btn-primary btn-round">
-                      <i class="material-icons">library_add</i> Добавить
-                    </button>
-                  </a>
+                  <h4 class="card-title ">Заказы</h4>
+                  
                 </div>
                 <div class="card-body">
                   <div class="table-responsive">
                     <table class="table">
                       <thead class=" text-primary">
                         <th>
-                          Название
+                          Номер
                         </th>
                         <th>
-                          Описание
+                          Клиент
+                        </th>
+                        <th>
+                          Доставка
+                        </th>
+                        <th>
+                          Телефон
+                        </th>
+                        <th>
+                          Статус
+                        </th>
+                        <th>
+                          Оплата
+                        </th>
+                        <th>
+                          Филиал
                         </th>
                         <th>
                           Активность
                         </th>
-                        <th>
-                          Порядок
-                        </th>
                       </thead>
                       <tbody>
-                        {% for category in all_categories %}
+                        {% for order in orders.object_list %}
                          
                         <tr>
                           <td>
-                            <a href="/{{category.language.title}}/categories/{{category.id}}/edit/">
-                              {{category.title}}
+                            <a href="/orders/show/{{order.id}}/">
+                              {{order.id}}
                             </a>
                           </td>
                           <td>
-                            {{category.description|truncatewords:10 }}
+                            {{order.name}}
+                            
                           </td>
                           <td>
-                            {% if category.active %}
+                            {% if order.delivery %}
                               <i class="material-icons">check_box</i>
                             {% else %}
                               <i class="material-icons">check_box_outline_blank</i>
                             {% endif %}
                           </td>
                           <td>
-                            {{category.order}}
+                            <a href="tel: +{{order.phone}}">
+                              {{order.phone}}
+                            </a>
+                          </td>
+                          <td>
+                            {{order.status.title}}
+                          </td>
+                          <td>
+                            {% if order.card %}
+                              {{ order.paysystem.title }}
+                            {% else %}
+                              Наличные
+                            {% endif %}
+                          </td>
+                          <td>
+                            {{order.selected_branch.title.all.0.title}}
+                          </td>
+                          <td>
+                            {% if product.active %}
+                              <i class="material-icons">check_box</i>
+                            {% else %}
+                              <i class="material-icons">check_box_outline_blank</i>
+                            {% endif %}
                           </td>
                         </tr>
                         {% endfor %}
@@ -179,9 +204,42 @@
                   </div>
                 </div>
                 <div class="card-footer">
-                  <div class="stats">
-                    <i class="material-icons">layers</i> Всего {{all_categories|length}}
-                  </div>
+                  <div class="pagination">
+                    <span class="step-links">
+                        {% if orders.has_previous %}
+                        <a href="?page=1">
+                          <button class="btn btn-primary btn-fab btn-fab-mini btn-round">
+                            <i class="material-icons">first_page</i>
+                          </button>
+                        </a>
+                        <a class="page-item" href="?page={{ orders.previous_page_number }}">
+                          <button class="btn btn-primary btn-fab btn-fab-mini btn-round">
+                            <i class="material-icons">navigate_before</i>
+                          </button>
+                        </a>
+                        
+                        {% endif %}
+                
+                        <span class="current">
+                            Страница {{ orders.number }} из {{ orders.paginator.num_pages }}
+                        </span>
+                
+                        {% if orders.has_next %}
+                        <a class="page-item" href="?page={{ orders.next_page_number }}">
+                          <button class="btn btn-primary btn-fab btn-fab-mini btn-round">
+                            <i class="material-icons">navigate_next</i>
+                          </button>
+                        </a>
+                        <a class="page-item" href="?page={{ orders.paginator.num_pages }}">
+                          <button class="btn btn-primary btn-fab btn-fab-mini btn-round">
+                            <i class="material-icons">last_page</i>
+                          </button>
+                        </a>
+                            <!-- <a class="page-item" href="?page={{ orders.next_page_number }}">Далее -->
+                            <!-- <a class="page-item" href="?page={{ orders.paginator.num_pages }}">В конец &raquo;</a> -->
+                        {% endif %}
+                    </span>
+                </div>
                 </div>
               </div>
             </div>

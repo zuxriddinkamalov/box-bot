@@ -729,6 +729,7 @@ class OrderStatus(models.Model):
     def __str__(self):
         return f'{self.title} - {self.order}'
 
+
 class OrderBase(models.Model):
 
     delivery = models.BooleanField(
@@ -838,7 +839,7 @@ class BranchTitle(models.Model):
 
                     if BranchTitle.objects.filter(language__title=language.title, title=self.title).count() == 0:
 
-                        translated = Message()
+                        translated = BranchTitle()
                         translated.title = self.title
                         translated.language = language
 

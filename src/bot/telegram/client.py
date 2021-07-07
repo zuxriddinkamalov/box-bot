@@ -8,6 +8,9 @@ from db import proj_path, core_models, telegram_models, Paginator
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class Client():
 
@@ -458,6 +461,7 @@ class Client():
                 order.selected_branch = branch_number
 
         else:
+            branch = telegram_models.Branch.objects.get(active=True)
 
             order.selected_branch = telegram_models.Branch.objects.get(pk=branch)
 

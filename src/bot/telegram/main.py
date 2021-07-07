@@ -185,7 +185,7 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
             photo = Client.get_photo(currentAnnouncement)
             
             Client.tick_view(currentAnnouncement)
-
+ 
             markup = keyboards.PaginationKeyboard(user, 1, len(news))
             msg = await bot.send_photo(user, photo[0], caption=text, reply_markup=markup)
             if not photo[1]:
@@ -509,22 +509,22 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
 
     if "prev" in data:
 
-        async with state.proxy() as data:
+        async with state.proxy() as data1:
 
-            category = data['category']
+            category = data1['category']
 
-        page = int(data.replace('prev ', ''))
+        page = int(data.replace('prev ', '').split(' ')[0])
 
         markup = keyboards.ProductKeyboard(user, page, category)
         await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
 
     if "next" in data:
 
-        async with state.proxy() as data:
+        async with state.proxy() as data1:
 
-            category = data['category']
+            category = data1['category']
 
-        page = int(data.replace('next ', ''))
+        page = int(data.replace('next ', '').split(' ')[0])
 
         markup = keyboards.ProductKeyboard(user, page, category)
         await bot.edit_message_reply_markup(user, callback_query.message.message_id, reply_markup=markup)
@@ -1770,21 +1770,21 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
             
         else:
             
-            async with state.proxy() as data:
+            cart = Client.get_cart(user)
+            # async with state.proxy() as data:
                 
-                text = GenerateOrder(user, data, True)
-                order = Client.create_order(user, data)
-                markup = keyboards.OrderAcceptOrRejectKeyboard(order.id)
+            #     text = GenerateOrder(user, data, True)
+            #     order = Client.create_order(user, data)
+            #     markup = keyboards.OrderAcceptOrRejectKeyboard(order.id)
                 
-                if order.delivery:
-                    await bot.send_message(order.selected_branch.channel, text, reply_markup=None)
-                    await bot.send_location(order.selected_branch.channel, latitude=order.latitude, longitude=order.longitude, reply_markup=markup)
-                else:
-                    await bot.send_message(order.selected_branch.channel, text, reply_markup=markup)
+            #     if order.delivery:
+            #         await bot.send_message(order.selected_branch.channel, text, reply_markup=None)
+            #         await bot.send_location(order.selected_branch.channel, latitude=order.latitude, longitude=order.longitude, reply_markup=markup)
+            #     else:
+            #         await bot.send_message(order.selected_branch.channel, text, reply_markup=markup)
             
             text = Messages(user)['order_accepted']
             
-            cart = Client.get_cart(user)
             async with state.proxy() as data:
 
                 paysystem = data['paysystem']

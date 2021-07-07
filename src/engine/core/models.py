@@ -2,6 +2,16 @@ from django.db import models
 from django.utils import timezone
 import hashlib
 
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+import traceback
+from openpyxl import load_workbook
+
+import logging
+logger = logging.getLogger(__name__)
+
 # Create your models here.
 
 
@@ -581,7 +591,7 @@ class Product(models.Model):
         if translate:
 
             if self.pk is None:
-                
+                logger.error(self.title)
                 self.code = str(hashlib.md5(self.title.encode('utf-8')).hexdigest())
 
                 for language in Language.objects.all():
@@ -908,3 +918,51 @@ class BranchBase(models.Model):
 
     # def __str__(self):
     #     return 
+
+
+
+class Excel(models.Model):
+
+    file = models.FileField(
+        upload_to='client/excels/'
+    )
+
+    def __str__(self):
+        return f'Список {self.id}'
+
+
+@receiver(post_save, sender=Excel)
+def create_clients(sender, instance, **kwargs):
+
+    wb = load_workbook(filename=instance.file.path)
+    ws = wb.active
+    order = 0
+    for row in ws.iter_rows():
+        title = row[4].value
+        if title not in ['Название вариации продукта', None]:
+            order += 1
+            sku = row[2].value
+            if sku == None:
+                sku = str(order)
+            if row[5].value is not None:
+                price = int(row[5].value)
+            else:
+                price = 0
+
+            category = row[6].value
+            category, created = Category.objects.get_or_create(title=category, description='empty', language=Language.objects.all().first(), code=category, active=True, photo=Photo.objects.all().first())
+
+            product = Product()
+            product.code = sku
+            product.title = title
+            product.language = Language.objects.all().first()
+            product.description = 'empty'
+            product.order = order
+            product.active = True
+            product.price = price
+            product.category = category
+            product.photo = Photo.objects.all().first()
+            product.save()
+
+
+            

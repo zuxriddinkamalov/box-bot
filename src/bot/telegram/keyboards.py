@@ -5,8 +5,11 @@ from aiogram.types import ReplyKeyboardRemove, \
     ReplyKeyboardMarkup, KeyboardButton, \
     InlineKeyboardButton, InlineKeyboardMarkup
 
+import logging
 
 Client = client()
+
+logger = logging.getLogger(__name__)
 
 
 def BuildMenu(buttons,
@@ -58,12 +61,14 @@ def MainMenuKeyboard(user, cart_count):
         end_buttons.append(KeyboardButton(button.title.replace('[{cart}]', f'[ {cart_count} ]' if cart_count != 0 else "")))
 
     end_buttons = BuildMenu(
-        end_buttons[2:-1],
+        end_buttons[:-1],
         2,
         footer_buttons=[end_buttons[-1]],
-        header_buttons=[end_buttons[0],
-                        end_buttons[1]]
+        # header_buttons=[end_buttons[0],
+                        # end_buttons[1]]
         )
+
+    logger.error(end_buttons)
 
     return ReplyKeyboardMarkup(end_buttons, resize_keyboard=True, one_time_keyboard=True)
 
@@ -126,7 +131,7 @@ def ProductKeyboard(user, page, category):
 
     end_buttons = BuildMenu(
         end_buttons,
-        2
+        1
         )
 
     end_buttons.append([

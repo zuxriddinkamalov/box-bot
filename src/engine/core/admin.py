@@ -13,6 +13,8 @@ admin.site.register(models.Category)
 admin.site.register(models.OrderStatus)
 admin.site.register(models.Region)
 admin.site.register(models.BranchTitle)
+admin.site.register(models.Excel)
+
 
 
 @admin.register(models.Button)

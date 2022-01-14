@@ -95,7 +95,7 @@ def GenerateCart(user: int):
         positions = cart.positions.all().filter(product__category=category)
         if positions.count() != 0:
 
-            end_text += f'{category.title.upper()}\n'
+            end_text += f'\n{category.title.upper()}\n'
 
             for position in positions:
 
@@ -181,7 +181,7 @@ def GenerateOrder(user, data, channel=False):
         positions = cart.positions.all().filter(product__category=category)
         if positions.count() != 0:
 
-            end_text += f'{category.title.upper()}\n'
+            end_text += f'\n{category.title.upper()}\n'
 
             for position in positions:
 

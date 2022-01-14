@@ -39,7 +39,8 @@ Client = ClientModule.Client()
 token_info = Client.get_telegram_token()
 bot = Bot(token=token_info['token'], parse_mode=types.ParseMode.HTML)
 print(f'\n\nBot started. [{token_info["title"]}] {token_info["token"]}\n\n')
-storage = RedisStorage2(db=1)
+# storage = RedisStorage2(db=1)
+storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
 dp.middleware.setup(LoggingMiddleware())
@@ -974,6 +975,7 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
 async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
     user = int(callback_query.from_user.id)
     data = callback_query.data
+    
 
     if "cancel" in data:
 
@@ -1054,7 +1056,7 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
         order = Client.get_order(order_num)
         if order.selected_branch.managers.all().filter(chat_id=manager_chat_id).count() != 0:
 
-            order.status = ClientModule.core_models.OrderStatus.objects.get(pk=3)
+            order.status = ClientModule.core_models.OrderStatus.objects.get(pk=4)
             order.save()
             
             user = order.user.chat_id
@@ -1081,7 +1083,7 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
         order = Client.get_order(order_num)
         if order.selected_branch.managers.all().filter(chat_id=manager_chat_id).count() != 0:
 
-            order.status = ClientModule.core_models.OrderStatus.objects.get(pk=4)
+            order.status = ClientModule.core_models.OrderStatus.objects.get(pk=5)
             order.active = False
             order.save()
             
@@ -2619,6 +2621,119 @@ async def location_edit_handler(message: types.Message, state: FSMContext):
 #             await bot.answer_callback_query(callback_query.id, text='У вас нет доступа к изменению статуса')
 #         return 
 
+@dp.callback_query_handler(state="*")
+async def callback_pagination_handler(callback_query: types.CallbackQuery, state: FSMContext):   
+    user = int(callback_query.from_user.id)
+    data = callback_query.data
+    
+        
+    if "accept_order_channel" in data:
+        manager_chat_id = user
+        order_num = int(data.replace('accept_order_channel ', ''))
+
+        order = Client.get_order(order_num)
+        if order.selected_branch.managers.all().filter(chat_id=manager_chat_id).count() != 0:
+
+            order.manager = Client.get_user(manager_chat_id)
+            order.status = ClientModule.core_models.OrderStatus.objects.get(pk=2)
+            order.save()
+            
+            user = order.user.chat_id
+
+            text = Messages(user)['in_porgress_cooking']
+            markup = None
+            await bot.send_message(user, text, reply_markup=markup)
+            
+            if order.delivery:
+                markup = keyboards.DeliveryStatusKeyboard(order.id)
+            else:
+                markup = keyboards.SelfStatusKeyboard(order.id)
+                
+            await bot.edit_message_reply_markup(order.selected_branch.channel,
+                                                message_id=callback_query.message.message_id,
+                                                reply_markup=markup)
+        else:
+            
+            await bot.answer_callback_query(callback_query.id, text='У вас нет доступа к изменению статуса')
+        return
+    
+    if 'to_delivery' in data:
+        manager_chat_id = user
+        order_num = int(data.replace('to_delivery ', ''))
+
+        order = Client.get_order(order_num)
+        if order.selected_branch.managers.all().filter(chat_id=manager_chat_id).count() != 0:
+
+            order.status = ClientModule.core_models.OrderStatus.objects.get(pk=3)
+            order.save()
+            
+            user = order.user.chat_id
+
+            text = Messages(user)['in_porgress_to_delivery']
+            markup = None
+            await bot.send_message(user, text, reply_markup=markup)
+            await bot.answer_callback_query(callback_query.id, text='Заказ передан на доставку')
+            
+            markup = keyboards.EndStatusKeyboard(order.id)
+            await bot.edit_message_reply_markup(order.selected_branch.channel,
+                                                message_id=callback_query.message.message_id,
+                                                reply_markup=markup)
+        else:
+            
+            await bot.answer_callback_query(callback_query.id, text='У вас нет доступа к изменению статуса')
+        return    
+    
+    if 'to_self' in data:
+        manager_chat_id = user
+        order_num = int(data.replace('to_self ', ''))
+
+        order = Client.get_order(order_num)
+        if order.selected_branch.managers.all().filter(chat_id=manager_chat_id).count() != 0:
+
+            order.status = ClientModule.core_models.OrderStatus.objects.get(pk=4)
+            order.save()
+            
+            user = order.user.chat_id
+
+            text = Messages(user)['in_porgress_to_self']
+            markup = None
+            await bot.send_message(user, text, reply_markup=markup)
+            await bot.answer_callback_query(callback_query.id, text='Заказ передан на самовывоз')
+            
+            
+            markup = keyboards.EndStatusKeyboard(order.id)
+            await bot.edit_message_reply_markup(order.selected_branch.channel,
+                                                message_id=callback_query.message.message_id,
+                                                reply_markup=markup)
+        else:
+            
+            await bot.answer_callback_query(callback_query.id, text='У вас нет доступа к изменению статуса')
+        return 
+    
+    if 'to_end' in data:
+        manager_chat_id = user
+        order_num = int(data.replace('to_end ', ''))
+
+        order = Client.get_order(order_num)
+        if order.selected_branch.managers.all().filter(chat_id=manager_chat_id).count() != 0:
+
+            order.status = ClientModule.core_models.OrderStatus.objects.get(pk=5)
+            order.active = False
+            order.save()
+            
+            user = order.user.chat_id
+
+            await bot.answer_callback_query(callback_query.id, text='Заказ завершен')
+
+            
+            markup = None
+            await bot.edit_message_reply_markup(order.selected_branch.channel,
+                                                message_id=callback_query.message.message_id,
+                                                reply_markup=markup)
+        else:
+            
+            await bot.answer_callback_query(callback_query.id, text='У вас нет доступа к изменению статуса')
+        return 
 
 async def shutdown(dispatcher: Dispatcher):
 

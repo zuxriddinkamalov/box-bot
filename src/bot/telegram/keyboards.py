@@ -596,7 +596,7 @@ def BranchSelectKeyboard(user):
 
     for position in branches:
 
-        end_buttons.append(InlineKeyboardButton(f'{position.title.get(language__title=language).title}', callback_data=f'{position.id}'))
+        end_buttons.append(InlineKeyboardButton(f'{position.title}', callback_data=f'{position.id}'))
 
     end_buttons = BuildMenu(
         end_buttons,

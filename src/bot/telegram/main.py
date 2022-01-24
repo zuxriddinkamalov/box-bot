@@ -3,6 +3,7 @@ import logging
 # import requests
 
 import asyncio
+import traceback
 
 from aiogram.types.message import ContentTypes
 # aiogram import
@@ -16,6 +17,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types import ParseMode, InputMediaPhoto, InputMediaVideo, ChatActions, InputFile, InputMedia
 from aiogram.types import ReplyKeyboardRemove
+from utils import create_order_billz
 
 # bot import
 import client as ClientModule
@@ -540,7 +542,7 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
         await states.User.ProductMenu.set()
 
         current_product = Client.get_product(product)
-        text = current_product.description
+        text = f"{current_product.description}\n\n{current_product.price} сум"
         photo = Client.get_photo(current_product)
         # markup = None
         markup = keyboards.ProductDetailsKeyboard(user)
@@ -625,7 +627,8 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
         await states.User.ProductMenu.set()
 
         current_product = Client.get_product(product)
-        text = current_product.description
+        text = f"{current_product.description}\n\n{current_product.price} сум"
+
         photo = Client.get_photo(current_product)
         # markup = None
         markup = keyboards.ProductDetailsKeyboard(user)
@@ -1859,6 +1862,9 @@ async def got_payment(message: types.Message, state: FSMContext):
                 
         text = GenerateOrder(user, data, True)
         order = Client.create_order(user, data)
+        order.paid = True
+        order.paid_at = datetime.now()
+        order.save()
         markup = keyboards.OrderAcceptOrRejectKeyboard(order.id)
         
         if order.delivery:
@@ -1869,9 +1875,9 @@ async def got_payment(message: types.Message, state: FSMContext):
                     
     text = Messages(user)['order_accepted']
     
-    async with state.proxy() as data:
+    # async with state.proxy() as data:
 
-        Client.create_order(user, data)
+    #     Client.create_order(user, data)
 
     markup = None
     await bot.send_message(user, text, reply_markup=markup)
@@ -2719,7 +2725,15 @@ async def callback_pagination_handler(callback_query: types.CallbackQuery, state
 
             order.status = ClientModule.core_models.OrderStatus.objects.get(pk=5)
             order.active = False
+            order.paid = True
             order.save()
+            
+
+            try:
+                await create_order_billz(order)
+            except Exception as e:
+                traceback.print_exc()
+                await bot.answer_callback_query(callback_query.id, text='При создании заказа в BILLZ произошла ошибка. Свяжитесь с администратором!')
             
             user = order.user.chat_id
 

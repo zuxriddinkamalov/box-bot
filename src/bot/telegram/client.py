@@ -339,6 +339,7 @@ class Client():
 
     @classmethod
     def get_photo(self, current):
+        logger.error(current)
 
         photo = current.photo
         if photo.file_id is None:
@@ -350,6 +351,7 @@ class Client():
                 photoPath[1],
                 photoPath[2]
                 )
+            end_path = end_path.replace("media", "images/media")
 
             return [InputFile(end_path), False, photo.id]
         else:
@@ -461,7 +463,7 @@ class Client():
                 order.selected_branch = branch_number
 
         else:
-            branch = telegram_models.Branch.objects.get(active=True)
+            branch = telegram_models.Branch.objects.get(default=True)
 
             order.selected_branch = telegram_models.Branch.objects.get(pk=branch)
 

@@ -207,6 +207,17 @@ class Order(OrderBase):
         null=False
         )
 
+    paid_at = models.DateTimeField(
+        'Created at',
+        # auto_now_add=True,
+        null=True,
+        blank=True
+        )
+    
+    paid = models.BooleanField(
+        default=False
+    )
+
     def get_price(self):
 
         total = 0
@@ -232,6 +243,17 @@ class Branch(BranchBase):
         null=False,
         blank=False
     )
+
+    default = models.BooleanField(
+        default=False
+    )
+
+    external_id = models.IntegerField(
+        'External ID',
+        default=0,
+        blank=True,
+        null=True
+        )
 
     longitude = models.FloatField(
         'Longitude',

@@ -118,6 +118,8 @@ def GenerateCart(user: int):
 
 def GenerateOrder(user, data, channel=False):
 
+    
+
     cart = Client.get_cart(user)
     if not channel:
         language = Client.get_user_language(user)
@@ -126,6 +128,11 @@ def GenerateOrder(user, data, channel=False):
         ru_lan_user = telegram_models.User.objects.filter(language__title='ru').first()
         language = ru_lan_user.language
         ru_lan_user = ru_lan_user.chat_id
+
+    if channel:
+        user_order = telegram_models.Order.objects.get(pk=int(data['order_id']))
+        cart = user_order.cart
+
         
     positions = cart.positions.all()
     for position in positions:
@@ -198,5 +205,9 @@ def GenerateOrder(user, data, channel=False):
 
     price = "{:,}".format(cart.get_price()).replace(",", " ")
     end_text += f'\n{cart_footer.replace("{cost}", price)}'
+    
+    if channel:
+        if user_order.delivery:
+            end_text += f"\n\nПредположительный адрес: {user_order.address}" 
 
     return end_text

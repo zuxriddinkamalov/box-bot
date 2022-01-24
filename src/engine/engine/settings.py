@@ -27,6 +27,20 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'test.onezeth.com']
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
+
 
 # Application definition
 
@@ -39,7 +53,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',
     'telegram',
-    'web'
+    'web',
+    'rest_framework'
 ]
 
 MIDDLEWARE = [
@@ -116,7 +131,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Tashkent'
 
 USE_I18N = True
 
@@ -129,3 +144,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+MEDIA_ROOT = os.path.join(os.getcwd(), 'images')
+MEDIA_URL = "/media/"
+STATIC_ROOT = os.path.join(os.getcwd(), 'static')
+
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10240

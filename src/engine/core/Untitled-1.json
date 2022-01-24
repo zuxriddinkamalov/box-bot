@@ -1,0 +1,95 @@
+{
+    "id": "1",
+    "jsonrpc": "2.0",
+    "result": [
+        {
+            "ID": 2670218,
+            "name": "Вафельное полотенце фотопринт, Комплект 2 шт., желтый - фисташковый, 40х70",
+            "sku": "9902",
+            "barCode": "3205304010001",
+            "price": 22000,
+            "priceUSD": 22000,
+            "discountAmount": 0,
+            "qty": 681,
+            "properties": {
+                "BRAND": "06302001004000000",
+                "CATEGORY": "Вафельное полотенце",
+                "COLLECTION": "",
+                "COLOR": "",
+                "DESCRIPTION": "",
+                "GENDER": "",
+                "MODEL_NAME": "",
+                "SEASON": "",
+                "SIZE": "",
+                "SUB_CATEGORY": "",
+                "ИДЕНТИФИКАЦИОННЫЙ_НОМЕР": "",
+                "ПАСПОРТ_НОМЕР": ""
+            },
+            "offices": [
+                {
+                    "officeID": 5792,
+                    "officeName": "NOVZA",
+                    "price": 22000,
+                    "priceUSD": 22000,
+                    "discountAmount": 0,
+                    "qty": 23
+                },
+                {
+                    "officeID": 6303,
+                    "officeName": "OQTOSH",
+                    "price": 22000,
+                    "priceUSD": 22000,
+                    "discountAmount": 0,
+                    "qty": 257
+                },
+                {
+                    "officeID": 6435,
+                    "officeName": "Novza Склад",
+                    "price": 22000,
+                    "priceUSD": 22000,
+                    "discountAmount": 0,
+                    "qty": 70
+                },
+                {
+                    "officeID": 6465,
+                    "officeName": "IPPODROM",
+                    "price": 22000,
+                    "priceUSD": 22000,
+                    "discountAmount": 0,
+                    "qty": 150
+                },
+                {
+                    "officeID": 6512,
+                    "officeName": "GULISTON",
+                    "price": 22000,
+                    "priceUSD": 22000,
+                    "discountAmount": 0,
+                    "qty": 34
+                },
+                {
+                    "officeID": 6852,
+                    "officeName": "Namangan",
+                    "price": 22000,
+                    "priceUSD": 22000,
+                    "discountAmount": 0,
+                    "qty": 16
+                },
+                {
+                    "officeID": 8467,
+                    "officeName": "Клиент 1",
+                    "price": 22000,
+                    "priceUSD": 22000,
+                    "discountAmount": 0,
+                    "qty": 131
+                }
+            ],
+            "imageUrls": [
+                {
+                    "url": "https://app.billz.uz/fileupload/products/2022/01/20/E0E28452229AF52E70F87DD03C3A30C2_012022113831_square.jpeg"
+                }
+            ],
+            "totalRows": 1235
+        }
+        
+    ]
+}

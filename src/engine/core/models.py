@@ -226,7 +226,7 @@ class Photo(models.Model):
 
     title = models.CharField(
         'Title',
-        max_length=10,
+        max_length=256,
         null=False,
         blank=False
         )
@@ -532,6 +532,29 @@ class Product(models.Model):
         blank=False,
         null=False
         )
+
+    external_id = models.IntegerField(
+        'External ID',
+        default=0,
+        blank=True,
+        null=True
+        )
+
+    barcode = models.CharField(
+        "Barcode",
+        default="",
+        max_length=255,
+        blank=True,
+        null=True
+        )
+    
+    sku = models.CharField(
+        "SKU",
+        default="",
+        max_length=255,
+        blank=True,
+        null=True
+        )
     
     code = models.CharField(
         "Unique Code",
@@ -596,11 +619,15 @@ class Product(models.Model):
 
                 for language in Language.objects.all():
 
-                    if Product.objects.filter(language__title=language.title, title=self.title).count() == 0:
+                    if Product.objects.filter(language__title=language.title, external_id=self.external_id).count() == 0:
 
                         translated = Product()
                         translated.title = self.title
                         translated.code = self.code
+                        translated.sku = self.sku
+                        translated.external_id = self.external_id
+                        translated.barcode = self.barcode
+
 
                         filtered_cat = Category.objects.filter(code=self.category.code, language=language)
 
@@ -869,9 +896,13 @@ class BranchTitle(models.Model):
 
 class BranchBase(models.Model):
 
-    title = models.ManyToManyField(
-        BranchTitle
-    )
+    title = models.CharField(
+        "Title",
+        default='',
+        max_length=255,
+        blank=True,
+        null=True
+        )
 
     code = models.CharField(
         "Unique Code",
@@ -914,6 +945,7 @@ class BranchBase(models.Model):
     
     def save(self, *args, **kwargs):
         self.updatedAt = timezone.now()
+        self.code = str(hashlib.md5(self.title.encode('utf-8')).hexdigest())
         super(BranchBase, self).save(*args, **kwargs)
 
     # def __str__(self):

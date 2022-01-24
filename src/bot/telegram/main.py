@@ -1751,8 +1751,9 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
             
             async with state.proxy() as data:
                 
-                text = GenerateOrder(user, data, True)
                 order = Client.create_order(user, data)
+                data["order_id"] = order.id
+                text = GenerateOrder(user, data, True)
                 markup = keyboards.OrderAcceptOrRejectKeyboard(order.id)
                 
                 if order.delivery:
@@ -1860,11 +1861,14 @@ async def got_payment(message: types.Message, state: FSMContext):
     
     async with state.proxy() as data:
                 
-        text = GenerateOrder(user, data, True)
         order = Client.create_order(user, data)
         order.paid = True
         order.paid_at = datetime.now()
         order.save()
+        data["order_id"] = order.id
+
+        text = GenerateOrder(user, data, True)
+
         markup = keyboards.OrderAcceptOrRejectKeyboard(order.id)
         
         if order.delivery:

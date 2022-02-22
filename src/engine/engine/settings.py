@@ -25,7 +25,7 @@ SECRET_KEY = 'agxk^0fl@^d$pk0x+ahyyhkm-xyr5cw5f5_pk$d6q43+^b$fde'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'test.onezeth.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'test.onezeth.com', 'aisha.onezeth.com', 'www.aisha.onezeth.com']
 
 LOGGING = {
     'version': 1,

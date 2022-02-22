@@ -39,6 +39,7 @@ class Test(APIView):
 
 class UpdateCatalog(APIView):
     def get(self, request) -> Response:
+        logger.info("Sync started...")
         if request.headers.get('Access-Token') != "asdkjhqwiokjnkjnmn1276akjhasdkjh":
             return Response(
                 {

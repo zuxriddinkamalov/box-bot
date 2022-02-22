@@ -8,6 +8,8 @@ from db import proj_path, core_models, telegram_models, Paginator
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
 
+from datetime import datetime
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -400,7 +402,7 @@ class Client():
 
         delivery = data['delivery']
         time = data['time']
-        card = data['card']
+        card = data.get('card', False)
         try:
             branch = int(data['branch'])
         except Exception as e:
@@ -450,6 +452,18 @@ class Client():
 
                 min = 1000000.0
                 branch_number = None
+                branch_list = telegram_models.Branch.objects.filter(
+                    active=True,
+                    start_time__lte=datetime.now().time(),
+                    end_time__gte=datetime.now().time()
+                    
+                )
+                logger.info('Enabled Branch List')
+                logger.info(branch_list)
+                if not branch_list.count():
+                    logger.info('All branches disabled')
+                    branch_list = telegram_models.Branch.objects.filter(active=True)
+
                 for branch in telegram_models.Branch.objects.filter(active=True):
 
                     point1 = (float(data['location_x']), float(data['location_y']))

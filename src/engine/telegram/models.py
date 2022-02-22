@@ -274,6 +274,20 @@ class Branch(BranchBase):
         null=False
         )
 
+    start_time = models.TimeField(
+        'Schedule Start',
+        auto_now_add=False,
+        auto_now=False,
+        default=timezone.now
 
-    # def __str__(self):
-    #     return self.title
+    )
+
+    end_time = models.TimeField(
+        'Schedule End',
+        auto_now_add=False,
+        auto_now=False,
+        default=timezone.now
+    )
+
+    def __str__(self):
+        return self.title

@@ -83,7 +83,7 @@ def CategoryKeyboard(user, page):
 
     for button in buttons:
 
-        end_buttons.append(InlineKeyboardButton(button.title, callback_data=f'category {button.id}'))
+        end_buttons.append(InlineKeyboardButton(button.title.title(), callback_data=f'category {button.id}'))
 
     buttons = Client.get_buttons(language, 2)
 
@@ -120,7 +120,7 @@ def ProductKeyboard(user, page, category):
 
     for button in buttons:
 
-        end_buttons.append(InlineKeyboardButton(button.title, callback_data=f'product {button.id}'))
+        end_buttons.append(InlineKeyboardButton(button.title.title(), callback_data=f'product {button.id}'))
 
     buttons = Client.get_buttons(language, 2)
 

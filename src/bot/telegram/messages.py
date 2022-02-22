@@ -55,6 +55,7 @@ def Messages(user: int):
         'noNews': Client.get_message(43, language),
         'choose_events': Client.get_message(44, language),
         'noEvents': Client.get_message(45, language),
+        'order_accepted_not_time': Client.get_message(46, language),
     }
 
     return MESSAGES

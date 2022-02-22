@@ -19,6 +19,7 @@ from aiogram.types import ParseMode, InputMediaPhoto, InputMediaVideo, ChatActio
 from aiogram.types import ReplyKeyboardRemove
 from utils import create_order_billz
 
+
 # bot import
 import client as ClientModule
 from messages import Messages, GenerateCart, GenerateOrder
@@ -36,13 +37,15 @@ logging.basicConfig(
     level=logging.DEBUG
     )
 
+logger = logging.getLogger(__name__)
+
 Client = ClientModule.Client()
 
 token_info = Client.get_telegram_token()
 bot = Bot(token=token_info['token'], parse_mode=types.ParseMode.HTML)
 print(f'\n\nBot started. [{token_info["title"]}] {token_info["token"]}\n\n')
-storage = RedisStorage2(db=1)
-# storage = MemoryStorage()
+# storage = RedisStorage2(db=1)
+storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
 dp.middleware.setup(LoggingMiddleware())
@@ -1744,7 +1747,7 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
         
         async with state.proxy() as data:
 
-            card = data['card']
+            card = data.get('card')
         
         if not card:
             
@@ -1760,11 +1763,24 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
                     await bot.send_message(order.selected_branch.channel, text, reply_markup=None)
                     await bot.send_location(order.selected_branch.channel, latitude=order.latitude, longitude=order.longitude, reply_markup=markup)
                 else:
+                    
                     await bot.send_message(order.selected_branch.channel, text, reply_markup=markup)
                     
 
+            now = datetime.now().time()
             text = Messages(user)['order_accepted']
-            
+            logger.info(order.selected_branch.start_time)
+            logger.info(now)
+            logger.info(order.selected_branch.end_time)
+            logger.info(order.selected_branch.start_time <= now)
+            logger.info(now <= order.selected_branch.end_time)
+            logger.info(not order.selected_branch.start_time <= now <= order.selected_branch.end_time)
+            if not order.selected_branch.start_time <= now <= order.selected_branch.end_time:
+                text = Messages(user)['order_accepted_not_time'].replace(
+                    "{start}",
+                    order.selected_branch.start_time.strftime(format="%H:%M")
+                ).replace("{end}", order.selected_branch.end_time.strftime(format="%H:%M"))
+                
             markup = None
             await bot.send_message(user, text, reply_markup=markup)
 
@@ -1777,19 +1793,6 @@ async def user_ammount_handler(message: types.Message, state: FSMContext):
         else:
             
             cart = Client.get_cart(user)
-            # async with state.proxy() as data:
-                
-            #     text = GenerateOrder(user, data, True)
-            #     order = Client.create_order(user, data)
-            #     markup = keyboards.OrderAcceptOrRejectKeyboard(order.id)
-                
-            #     if order.delivery:
-            #         await bot.send_message(order.selected_branch.channel, text, reply_markup=None)
-            #         await bot.send_location(order.selected_branch.channel, latitude=order.latitude, longitude=order.longitude, reply_markup=markup)
-            #     else:
-            #         await bot.send_message(order.selected_branch.channel, text, reply_markup=markup)
-            
-            text = Messages(user)['order_accepted']
             
             async with state.proxy() as data:
 
@@ -1878,10 +1881,12 @@ async def got_payment(message: types.Message, state: FSMContext):
             await bot.send_message(order.selected_branch.channel, text, reply_markup=markup)
                     
     text = Messages(user)['order_accepted']
-    
-    # async with state.proxy() as data:
-
-    #     Client.create_order(user, data)
+    now = datetime.now().time()
+    if not order.selected_branch.start_time <= now <= order.selected_branch.end_time:
+        text = Messages(user)['order_accepted_not_time'].replace(
+            "{start}",
+            order.selected_branch.start_time.strftime(format="%H:%M")
+        ).replace("{end}", order.selected_branch.end_time.strftime(format="%H:%M"))
 
     markup = None
     await bot.send_message(user, text, reply_markup=markup)
